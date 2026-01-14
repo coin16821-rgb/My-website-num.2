@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игры - Портфолио</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="games-styles.css">
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Портфолио</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Главная</a>
+                <a href="games.html" class="nav-link">Games</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Заголовок страницы игр -->
+    <section class="games-header">
+        <div class="games-header-container">
+            <h1>Action Игры</h1>
+            <p>Динамические игры для практики навыков разработки</p>
+        </div>
+    </section>
+
+    <!-- Контейнер с играми -->
+    <main class="games-container">
+        <!-- Игра 1: Змейка -->
+        <div class="game-card">
+            <h2>🐍 Змейка</h2>
+            <div class="game-content">
+                <p>Счет: <span id="snakeScore">0</span></p>
+                <canvas id="snakeCanvas" width="400" height="400"></canvas>
+                <div class="game-controls">
+                    <button onclick="startSnake()">Начать</button>
+                    <button onclick="resetSnake()">Сброс</button>
+                </div>
+                <p>Управление: Стрелки или WASD</p>
+            </div>
+        </div>
+
+        <!-- Игра 2: Пинг-Понг -->
+        <div class="game-card">
+            <h2>🏓 Пинг-Понг</h2>
+            <div class="game-content">
+                <p>Счет: Игрок <span id="pongPlayerScore">0</span> : <span id="pongAIScore">0</span> ИИ</p>
+                <canvas id="pongCanvas" width="500" height="300"></canvas>
+                <div class="game-controls">
+                    <button onclick="startPong()">Начать</button>
+                    <button onclick="resetPong()">Сброс</button>
+                </div>
+                <p>Управление: Вверх/Вниз или W/S</p>
+            </div>
+        </div>
+
+        <!-- Игра 3: Космический шутер -->
+        <div class="game-card">
+            <h2>🚀 Космический шутер</h2>
+            <div class="game-content">
+                <p>Счет: <span id="shooterScore">0</span> | Жизни: <span id="shooterLives">3</span></p>
+                <canvas id="shooterCanvas" width="500" height="400"></canvas>
+                <div class="game-controls">
+                    <button onclick="startShooter()">Начать</button>
+                    <button onclick="resetShooter()">Сброс</button>
+                </div>
+                <p>Управление: Стрелки для движения, Пробел для выстрела</p>
+            </div>
+        </div>
+
+        <!-- Игра 4: Додж (Уклонение) -->
+        <div class="game-card">
+            <h2>💥 Додж</h2>
+            <div class="game-content">
+                <p>Счет: <span id="dodgeScore">0</span> | Время: <span id="dodgeTime">0</span>с</p>
+                <canvas id="dodgeCanvas" width="400" height="500"></canvas>
+                <div class="game-controls">
+                    <button onclick="startDodge()">Начать</button>
+                    <button onclick="resetDodge()">Сброс</button>
+                </div>
+                <p>Управление: Стрелки или WASD для уклонения</p>
+            </div>
+        </div>
+
+        <!-- Игра 5: Арканоид -->
+        <div class="game-card">
+            <h2>🎯 Арканоид</h2>
+            <div class="game-content">
+                <p>Счет: <span id="breakoutScore">0</span> | Блоков осталось: <span id="breakoutBlocks">30</span></p>
+                <canvas id="breakoutCanvas" width="500" height="400"></canvas>
+                <div class="game-controls">
+                    <button onclick="startBreakout()">Начать</button>
+                    <button onclick="resetBreakout()">Сброс</button>
+                </div>
+                <p>Управление: Стрелки или A/D для платформы</p>
+            </div>
+        </div>
+
+        <!-- Игра 6: Платформер -->
+        <div class="game-card">
+            <h2>🦘 Платформер</h2>
+            <div class="game-content">
+                <p>Счет: <span id="platformerScore">0</span> | Монет: <span id="platformerCoins">0</span></p>
+                <canvas id="platformerCanvas" width="500" height="400"></canvas>
+                <div class="game-controls">
+                    <button onclick="startPlatformer()">Начать</button>
+                    <button onclick="resetPlatformer()">Сброс</button>
+                </div>
+                <p>Управление: Стрелки или A/D для движения, Пробел для прыжка</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="games-script.js"></script>
+</body>
+</html>

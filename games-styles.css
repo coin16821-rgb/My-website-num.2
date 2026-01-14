@@ -1,0 +1,145 @@
+/* Заголовок страницы игр */
+.games-header {
+    padding: 8rem 2rem 3rem;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.games-header-container h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    margin-bottom: 1rem;
+    color: var(--accent);
+}
+
+.games-header-container p {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+}
+
+/* Контейнер с играми */
+.games-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+/* Карточка игры */
+.game-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent);
+    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+}
+
+.game-card h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: var(--accent);
+    text-align: center;
+}
+
+.game-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.game-content p {
+    color: var(--text-light);
+    line-height: 1.6;
+    font-size: 1rem;
+    text-align: center;
+}
+
+/* Стили для canvas */
+.game-content canvas {
+    width: 100%;
+    max-width: 100%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    background: #000;
+    display: block;
+    margin: 0 auto;
+}
+
+.game-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.game-content button {
+    padding: 0.8rem 1.5rem;
+    background: var(--accent);
+    color: var(--bg-dark);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.game-content button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+}
+
+.game-content button:active {
+    transform: translateY(0);
+}
+
+.secondary-btn {
+    background: transparent !important;
+    color: var(--accent) !important;
+    border: 2px solid var(--accent) !important;
+}
+
+.secondary-btn:hover {
+    background: var(--accent) !important;
+    color: var(--bg-dark) !important;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .games-container {
+        grid-template-columns: 1fr;
+        padding: 2rem 1rem;
+    }
+
+    .game-card {
+        padding: 1.5rem;
+    }
+
+    .game-content canvas {
+        width: 100%;
+        height: auto;
+    }
+
+    .game-controls {
+        flex-direction: column;
+    }
+
+    .game-controls button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .games-header {
+        padding: 6rem 1rem 2rem;
+    }
+}

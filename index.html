@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный сайт разработчика</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Портфолио</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Главная</a>
+                <a href="games.html" class="nav-link">Games</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero-секция с космическим фоном.
+             ВНИМАНИЕ: #spaceScene, #spaceCanvas и космические объекты
+             создаются и анимируются JavaScript-кодом (script.js).
+        -->
+        <section class="hero">
+            <div class="hero-container">
+                <h1 class="hero-title">Марк</h1>
+                <p class="hero-bio">
+                    Начинающий разработчик, увлечённый созданием веб-приложений и изучением искусственного интеллекта.
+                    Постоянно развиваюсь и открываю для себя новые технологии.
+                </p>
+                <h2 class="hero-subtitle">Мой путь в IT + AI</h2>
+                <button class="cta-button" id="skillsButton">Мои навыки</button>
+            </div>
+        </section>
+
+        <!-- Секция Games -->
+        <section class="games-section">
+            <div class="games-section-container">
+                <h2 class="games-section-title">🎮 Games</h2>
+                <p class="games-section-description">
+                    Коллекция динамических браузерных игр для практики навыков разработки
+                </p>
+                <a href="games.html" class="games-section-button">Играть</a>
+            </div>
+        </section>
+
+        <!-- Форма обратной связи -->
+        <section class="contact">
+            <div class="contact-container">
+                <h2 class="contact-title">Связаться со мной</h2>
+                <form
+                    action="https://formspree.io/f/mbdlndqb"
+                    method="POST"
+                    class="contact-form"
+                    id="contactForm"
+                >
+                    <input
+                        type="text"
+                        name="name"
+                        placeholder="Введите имя..."
+                        class="contact-input"
+                        required
+                    >
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="Введите @mail..."
+                        class="contact-input"
+                        required
+                    >
+                    <textarea
+                        name="message"
+                        placeholder="Введите текстовое сообщение..."
+                        class="contact-textarea"
+                        rows="5"
+                        required
+                    ></textarea>
+                    <button type="submit" class="contact-submit">Отправить</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Скрипт с логикой космического фона, кнопки "Мои навыки" и формы -->
+    <script src="script.js"></script>
+</body>
+</html>
