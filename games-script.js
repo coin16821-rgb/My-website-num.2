@@ -241,3 +241,93 @@ function initMobileTouchControlsSmart() {
 
   addEventListener('resize', applyMode);
       }
+// ===== Mobile Touch Controls (Добавь в КОНЕЦ games-script.js) =====
+document.addEventListener('DOMContentLoaded', () => {
+  initMobileTouchControlsForGames();
+});
+
+function initMobileTouchControlsForGames() {
+  const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  if (!isTouch) return;
+
+  // НЕ блокируем скролл всей страницы! (важно)
+  // Мы блокируем жесты только внутри canvas (через touch-action + preventDefault).
+
+  // UI один раз
+  if (document.getElementById('touchUI')) return;
+
+  const ui = document.createElement('div');
+  ui.id = 'touchUI';
+  ui.className = 'touch-ui';
+  ui.innerHTML = `
+    <div class="touch-pad">
+      <button class="tbtn" data-act="left">◀</button>
+      <button class="tbtn" data-act="right">▶</button>
+      <button class="tbtn" data-act="up">▲</button>
+      <button class="tbtn" data-act="down">▼</button>
+    </div>
+
+    <div class="touch-actions">
+      <button class="tbtn big" data-act="jump">Jump</button>
+      <button class="tbtn big" data-act="action">Action</button>
+      <button class="tbtn" data-act="pause">⏸</button>
+    </div>
+  `;
+  document.body.appendChild(ui);
+
+  // Эмуляция клавиатуры под твои игры (Arrow + WASD + Space + E + Esc/P)
+  const map = {
+    left:  [{ code:'ArrowLeft', key:'ArrowLeft', keyCode:37 }, { code:'KeyA', key:'a', keyCode:65 }],
+    right: [{ code:'ArrowRight', key:'ArrowRight', keyCode:39 }, { code:'KeyD', key:'d', keyCode:68 }],
+    up:    [{ code:'ArrowUp', key:'ArrowUp', keyCode:38 }, { code:'KeyW', key:'w', keyCode:87 }],
+    down:  [{ code:'ArrowDown', key:'ArrowDown', keyCode:40 }, { code:'KeyS', key:'s', keyCode:83 }],
+    jump:  [{ code:'Space', key:' ', keyCode:32 }],
+    action:[{ code:'KeyE', key:'e', keyCode:69 }],
+    pause: [{ code:'Escape', key:'Escape', keyCode:27 }, { code:'KeyP', key:'p', keyCode:80 }],
+  };
+
+  function dispatchKey(type, k) {
+    const ev = new KeyboardEvent(type, { bubbles:true, cancelable:true, code:k.code, key:k.key });
+    try {
+      Object.defineProperty(ev, 'keyCode', { get: () => k.keyCode });
+      Object.defineProperty(ev, 'which', { get: () => k.keyCode });
+    } catch {}
+    window.dispatchEvent(ev);
+    document.dispatchEvent(ev);
+  }
+
+  const press = (act) => (map[act] || []).forEach(k => dispatchKey('keydown', k));
+  const rel   = (act) => (map[act] || []).forEach(k => dispatchKey('keyup', k));
+
+  ui.querySelectorAll('[data-act]').forEach(btn => {
+    const act = btn.dataset.act;
+
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      btn.setPointerCapture(e.pointerId);
+      press(act);
+    });
+
+    btn.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      rel(act);
+    });
+
+    btn.addEventListener('pointercancel', () => rel(act));
+    btn.addEventListener('lostpointercapture', () => rel(act));
+  });
+
+  // Блокируем прокрутку ТОЛЬКО при жестах на canvas (чтобы играть)
+  // Это не ломает прокрутку страницы, если палец не на canvas.
+  document.querySelectorAll('canvas').forEach(c => {
+    c.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    Object.keys(map).forEach(rel);
+  });
+}
+
