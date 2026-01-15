@@ -30,6 +30,7 @@ function initSpaceBackground() {
   const bgLayer = document.createElement('div'); bgLayer.id='spaceBgLayer';
   Object.assign(bgLayer.style,{position:'absolute',inset:'0',zIndex:'0',pointerEvents:'none',willChange:'transform',transform:'translate3d(0,0,0) scale(1.08)'});
   scene.appendChild(bgLayer);
+  enhanceNebulaBlendAndStars();
 
   const starLayer = document.createElement('div');
   Object.assign(starLayer.style,{position:'absolute',inset:'0',zIndex:'1',pointerEvents:'none',overflow:'hidden'});
@@ -449,3 +450,4 @@ function enhanceNebulaBlendAndStars() {
     }
   });
 }
+
