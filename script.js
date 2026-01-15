@@ -303,7 +303,7 @@ function initSpaceBackground() {
       start: t,
       duration: 5,
       boost: -12.0,
-      shakeAmp: 6,
+      shakeAmp: 4,
       pulseAmp: 0.25
     };
   }
@@ -673,3 +673,4 @@ function initSpaceBackground() {
 
   requestAnimationFrame(tick);
 }
+
