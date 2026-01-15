@@ -1,119 +1,131 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игры - Портфолио</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="games-styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <title>Games Hub</title>
+  <link rel="stylesheet" href="games.css" />
 </head>
 <body>
-    <!-- Навигация -->
-    <nav class="nav">
-        <div class="nav-container">
-            <a href="index.html" class="nav-logo">Портфолио</a>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link">Главная</a>
-                <a href="games.html" class="nav-link">Games</a>
-            </div>
-        </div>
-    </nav>
+  <header class="topbar">
+    <a class="topbar__link" href="index.html">← Назад</a>
+    <div class="topbar__title">Action Games</div>
+    <button id="btnSettings" class="topbar__btn">Настройки</button>
+  </header>
 
-    <!-- Заголовок страницы игр -->
-    <section class="games-header">
-        <div class="games-header-container">
-            <h1>Action Игры</h1>
-            <p>Динамические игры для практики навыков разработки</p>
-        </div>
-    </section>
+  <main id="root" class="root">
+    <canvas id="game" class="game"></canvas>
 
-    <!-- Контейнер с играми -->
-    <main class="games-container">
-        <!-- Игра 1: Змейка -->
-        <div class="game-card">
-            <h2>🐍 Змейка</h2>
-            <div class="game-content">
-                <p>Счет: <span id="snakeScore">0</span></p>
-                <canvas id="snakeCanvas" width="400" height="400"></canvas>
-                <div class="game-controls">
-                    <button onclick="startSnake()">Начать</button>
-                    <button onclick="resetSnake()">Сброс</button>
-                </div>
-                <p>Управление: Стрелки или WASD</p>
-            </div>
-        </div>
+    <!-- HUD -->
+    <div id="hud" class="hud" hidden>
+      <div id="hudLeft" class="hud__left"></div>
+      <div class="hud__right">
+        <button id="btnPause" class="ui-btn">Пауза</button>
+      </div>
+    </div>
 
-        <!-- Игра 2: Пинг-Понг -->
-        <div class="game-card">
-            <h2>🏓 Пинг-Понг</h2>
-            <div class="game-content">
-                <p>Счет: Игрок <span id="pongPlayerScore">0</span> : <span id="pongAIScore">0</span> ИИ</p>
-                <canvas id="pongCanvas" width="500" height="300"></canvas>
-                <div class="game-controls">
-                    <button onclick="startPong()">Начать</button>
-                    <button onclick="resetPong()">Сброс</button>
-                </div>
-                <p>Управление: Вверх/Вниз или W/S</p>
-            </div>
-        </div>
+    <!-- Main Menu -->
+    <div id="menu" class="panel">
+      <h1 class="panel__title">Выбери игру</h1>
+      <div class="grid">
+        <button class="card" data-game="runner">
+          <div class="card__title">Astro Runner</div>
+          <div class="card__desc">Уклоняйся, собирай топливо, пройди 3 сектора</div>
+        </button>
+        <button class="card" data-game="shooter">
+          <div class="card__title">Neon Shooter</div>
+          <div class="card__desc">Волны врагов, апгрейды, 3 уровня</div>
+        </button>
+        <button class="card" data-game="arena">
+          <div class="card__title">Blade Arena</div>
+          <div class="card__desc">Арена, рывок B, комбо, 3 волны</div>
+        </button>
+        <button class="card" data-game="breakout">
+          <div class="card__title">Breakout X</div>
+          <div class="card__desc">Арканоид, бонусы, 3 раскладки</div>
+        </button>
+        <button class="card" data-game="escort">
+          <div class="card__title">Escort Protocol</div>
+          <div class="card__desc">Защити груз до точки эвакуации (3 этапа)</div>
+        </button>
+        <button class="card" data-game="stealth">
+          <div class="card__title">Hack & Hide</div>
+          <div class="card__desc">Стелс + взлом терминалов (3 уровня)</div>
+        </button>
+      </div>
 
-        <!-- Игра 3: Космический шутер -->
-        <div class="game-card">
-            <h2>🚀 Космический шутер</h2>
-            <div class="game-content">
-                <p>Счет: <span id="shooterScore">0</span> | Жизни: <span id="shooterLives">3</span></p>
-                <canvas id="shooterCanvas" width="500" height="400"></canvas>
-                <div class="game-controls">
-                    <button onclick="startShooter()">Начать</button>
-                    <button onclick="resetShooter()">Сброс</button>
-                </div>
-                <p>Управление: Стрелки для движения, Пробел для выстрела</p>
-            </div>
+      <div class="panel__footer">
+        <div class="hint">
+          ПК: WASD/Стрелки — движение, Space(A), Shift(B), P/Esc — пауза.
+          Телефон: кнопки на экране.
         </div>
+      </div>
+    </div>
 
-        <!-- Игра 4: Додж (Уклонение) -->
-        <div class="game-card">
-            <h2>💥 Додж</h2>
-            <div class="game-content">
-                <p>Счет: <span id="dodgeScore">0</span> | Время: <span id="dodgeTime">0</span>с</p>
-                <canvas id="dodgeCanvas" width="400" height="500"></canvas>
-                <div class="game-controls">
-                    <button onclick="startDodge()">Начать</button>
-                    <button onclick="resetDodge()">Сброс</button>
-                </div>
-                <p>Управление: Стрелки или WASD для уклонения</p>
-            </div>
+    <!-- Pause overlay -->
+    <div id="pause" class="panel" hidden>
+      <h2 class="panel__title">Пауза</h2>
+      <div class="row">
+        <button id="btnResume" class="ui-btn ui-btn--primary">Продолжить</button>
+        <button id="btnRestart" class="ui-btn">Рестарт</button>
+        <button id="btnToMenu" class="ui-btn">В меню</button>
+      </div>
+    </div>
+
+    <!-- Settings modal -->
+    <div id="settings" class="modal" hidden>
+      <div class="modal__card">
+        <h2>Настройки</h2>
+
+        <label class="field">
+          <span>Сложность</span>
+          <select id="difficulty">
+            <option value="0.85">Легко</option>
+            <option value="1" selected>Нормально</option>
+            <option value="1.2">Сложно</option>
+          </select>
+        </label>
+
+        <label class="field field--row">
+          <input id="showTouch" type="checkbox" />
+          <span>Показывать кнопки на экране</span>
+        </label>
+
+        <label class="field field--row">
+          <input id="showFps" type="checkbox" />
+          <span>Показывать FPS</span>
+        </label>
+
+        <label class="field field--row">
+          <input id="vibrate" type="checkbox" />
+          <span>Вибрация (если поддерживается)</span>
+        </label>
+
+        <div class="row">
+          <button id="btnCloseSettings" class="ui-btn ui-btn--primary">Ок</button>
         </div>
+      </div>
+    </div>
 
-        <!-- Игра 5: Арканоид -->
-        <div class="game-card">
-            <h2>🎯 Арканоид</h2>
-            <div class="game-content">
-                <p>Счет: <span id="breakoutScore">0</span> | Блоков осталось: <span id="breakoutBlocks">30</span></p>
-                <canvas id="breakoutCanvas" width="500" height="400"></canvas>
-                <div class="game-controls">
-                    <button onclick="startBreakout()">Начать</button>
-                    <button onclick="resetBreakout()">Сброс</button>
-                </div>
-                <p>Управление: Стрелки или A/D для платформы</p>
-            </div>
-        </div>
+    <!-- Touch controls (mobile) -->
+    <div id="touchUI" class="touch-ui" hidden>
+      <div class="touch-pad">
+        <button class="tbtn" data-act="left">◀</button>
+        <button class="tbtn" data-act="right">▶</button>
+        <button class="tbtn" data-act="up">▲</button>
+        <button class="tbtn" data-act="down">▼</button>
+      </div>
 
-        <!-- Игра 6: Платформер -->
-        <div class="game-card">
-            <h2>🦘 Платформер</h2>
-            <div class="game-content">
-                <p>Счет: <span id="platformerScore">0</span> | Монет: <span id="platformerCoins">0</span></p>
-                <canvas id="platformerCanvas" width="500" height="400"></canvas>
-                <div class="game-controls">
-                    <button onclick="startPlatformer()">Начать</button>
-                    <button onclick="resetPlatformer()">Сброс</button>
-                </div>
-                <p>Управление: Стрелки или A/D для движения, Пробел для прыжка</p>
-            </div>
-        </div>
-    </main>
+      <div class="touch-actions">
+        <button class="tbtn big" data-act="a">A</button>
+        <button class="tbtn big" data-act="b">B</button>
+        <button class="tbtn" data-act="pause">⏸</button>
+      </div>
+    </div>
 
-    <script src="games-script.js"></script>
+    <div id="fps" class="fps" hidden></div>
+  </main>
+
+  <script src="games.js"></script>
 </body>
 </html>
