@@ -23,10 +23,8 @@ function initSpaceBackground() {
   const ease = t => 0.5 - 0.5 * Math.cos(Math.PI * t);
   const norm = (dx,dy)=>{const d=Math.hypot(dx,dy)||1; return {x:dx/d,y:dy/d};};
 
-  // reset scene
   hero.querySelector('#spaceScene')?.remove();
 
-  // scene layers
   const scene = document.createElement('div'); scene.id='spaceScene'; hero.appendChild(scene);
 
   const bgLayer = document.createElement('div'); bgLayer.id='spaceBgLayer';
@@ -43,12 +41,10 @@ function initSpaceBackground() {
 
   hero.classList.add('space-ready');
 
-  // sizes
   let W=1,H=1;
   const resize=()=>{const r=hero.getBoundingClientRect(); W=Math.max(1,r.width|0); H=Math.max(1,r.height|0);};
   resize(); addEventListener('resize', resize);
 
-  // pointer
   let mouseX=W/2, mouseY=H/2;
   const setPointer = (e)=>{
     const r=hero.getBoundingClientRect(); const p=e.touches?.[0]??e;
@@ -77,7 +73,7 @@ function initSpaceBackground() {
     }
   })();
 
-  // assets compact
+  // assets
   const neb = [
     ['nebula1',980,0.28,0.50,0.45],
     ['nebula2',900,0.30,0.22,0.70],
@@ -102,9 +98,6 @@ function initSpaceBackground() {
   ];
 
   const sprites = [];
-  let anyLoaded = false;
-  const markLoaded = () => { if (!anyLoaded) { anyLoaded = true; hero.classList.add('space-ready'); } };
-
   function makeSprite(type, name, size, opacity, x, y, idleSpinMs) {
     const layer = (type === 'nebula') ? bgLayer : objLayer;
 
@@ -148,14 +141,9 @@ function initSpaceBackground() {
       s.ready = true;
       s.currX = s.bx * W;
       s.currY = s.by * H;
-      markLoaded();
+      hero.classList.add('space-ready');
     };
-    const onError = () => {
-      wrap.style.display = 'none';
-      s.ready = false;
-      markLoaded();
-      console.warn('Image load error:', img.src);
-    };
+    const onError = () => { wrap.style.display='none'; console.warn('Image load error:', img.src); };
 
     img.addEventListener('load', onLoad);
     img.addEventListener('error', onError);
@@ -165,7 +153,6 @@ function initSpaceBackground() {
 
     wrap.appendChild(img);
     layer.appendChild(wrap);
-
     sprites.push(s);
   }
 
@@ -206,12 +193,7 @@ function initSpaceBackground() {
     }
 
     if (type === 'explore') {
-      p.explore = {
-        x:(p.currX ?? p.bx*W), y:(p.currY ?? p.by*H),
-        tx:rand(60,W-60), ty:rand(60,H-60),
-        next: t + rand(0.7,1.6),
-        jump:null, nextJump: t + rand(2.0,5.0)
-      };
+      p.explore = { x:(p.currX ?? p.bx*W), y:(p.currY ?? p.by*H), tx:rand(60,W-60), ty:rand(60,H-60), next:t+rand(0.7,1.6), jump:null, nextJump:t+rand(2.0,5.0) };
       p.effect = { type:'explore', start:t, dur:30 };
       return;
     }
@@ -219,11 +201,21 @@ function initSpaceBackground() {
     if (type === 'shrinkExit') {
       const sx = (p.currX ?? p.bx*W), sy = (p.currY ?? p.by*H);
       const portal = pickPortal();
-      p.effect = { type:'shrinkExit', start:t, dur:15, sx, sy, portal, phase:-1 };
+
+      // параметры "всасывания по спирали"
+      const swDir = Math.random() < 0.5 ? 1 : -1;
+      const swTurns = rand(2.0, 3.5);               // сколько оборотов на пути к порталу
+      const swR = Math.min(55, p.size * 0.35 + 12); // максимальный радиус спирали (px)
+      const swA0 = Math.random() * Math.PI * 2;
+
+      p.effect = {
+        type:'shrinkExit', start:t, dur:15,
+        sx, sy, portal, phase:-1,
+        swDir, swTurns, swR, swA0
+      };
     }
   }
 
-  // click stable nearest
   hero.addEventListener('pointerdown', (e)=>{
     if (e.target.closest('button, a, input, textarea, form, label')) return;
     setPointer(e);
@@ -237,6 +229,7 @@ function initSpaceBackground() {
       if (d <= hit && d < bestD) { best = s; bestD = d; }
     }
     if (!best) return;
+
     const t = performance.now()/1000;
     best.type==='galaxy' ? startGalaxySpin(best,t) : startPlanetNext(best,t);
   }, {capture:true});
@@ -251,7 +244,6 @@ function initSpaceBackground() {
     bgLayer.style.transform = `translate3d(${bgTx}px,${bgTy}px,0) scale(1.08)`;
   };
 
-  // main loop
   let last=0;
   (function tick(now){
     if (document.hidden) return requestAnimationFrame(tick);
@@ -296,9 +288,7 @@ function initSpaceBackground() {
         const ef=s.effect, u=(t-ef.start)/ef.dur;
 
         if (u>=1||u<0) {
-          // ВАЖНО: если shrinkExit закончился — закрепляем "дом" и фазы, чтобы НЕ прыгало
           if (ef.type === 'shrinkExit') {
-            s.currX = ef.sx; s.currY = ef.sy;
             s.bx = clamp01(ef.sx / W);
             s.by = clamp01(ef.sy / H);
             s.phx = -t * s.floatFx;
@@ -356,27 +346,39 @@ function initSpaceBackground() {
           } else scale *= baseScale;
         }
         else if (ef.type==='shrinkExit') {
-          // НОВОЕ: ВОСАСЫВАНИЕ В ГАЛАКТИКУ и ВОЗВРАТ ИЗ НЕЁ
-          // 0..0.55: двигаемся в портал и уменьшаемся 1->0
-          // 0.55..0.65: пауза невидимо (scale=0)
-          // 0.65..1: вылетаем из портала и возвращаемся в sx/sy, scale 0->1
+          // ВОСАСЫВАНИЕ ПО СПИРАЛИ -> ПАУЗА -> ВЫЛЕТ И ВОЗВРАТ В sx/sy
           const portal = portalCenter(ef.portal);
           const phase = u < 0.55 ? 0 : (u < 0.65 ? 1 : 2);
 
           if (phase !== ef.phase) {
             ef.phase = phase;
             if (phase === 2) {
-              // жёстко ставим позицию в центр портала, чтобы не "появлялось из рандомного места"
-              s.currX = portal.x;
-              s.currY = portal.y;
+              s.currX = portal.x; s.currY = portal.y;
               galaxySpit(ef.portal, t, ef.sx - portal.x, ef.sy - portal.y);
             }
           }
 
           if (phase === 0) {
-            const p = ease(u / 0.55);
-            x = ef.sx + (portal.x - ef.sx) * p;
-            y = ef.sy + (portal.y - ef.sy) * p;
+            const p = ease(u / 0.55); // 0..1
+            // базовая линейная интерполяция к порталу
+            let lx = ef.sx + (portal.x - ef.sx) * p;
+            let ly = ef.sy + (portal.y - ef.sy) * p;
+
+            // добавка спирального "вихря" вокруг направления движения:
+            const dx = portal.x - ef.sx, dy = portal.y - ef.sy;
+            const udir = norm(dx, dy);              // вдоль пути
+            const perp = { x: -udir.y, y: udir.x }; // перпендикуляр
+
+            const ang = ef.swA0 + ef.swDir * (ef.swTurns * 2 * Math.PI * p);
+            const rad = ef.swR * (1 - p); // радиус затухает к 0 в конце
+
+            // спираль вокруг траектории: смесь вдоль+поперёк
+            const ox = (Math.cos(ang) * perp.x + Math.sin(ang) * udir.x) * rad;
+            const oy = (Math.cos(ang) * perp.y + Math.sin(ang) * udir.y) * rad;
+
+            x = lx + ox;
+            y = ly + oy;
+
             scale = 1 - p;
           } else if (phase === 1) {
             x = portal.x; y = portal.y; scale = 0;
@@ -389,8 +391,10 @@ function initSpaceBackground() {
         }
       }
 
-      // smooth pos
+      // smooth pos:
+      const inShrink = s.effect && s.effect.type === 'shrinkExit';
       if (s.currX==null){ s.currX=x; s.currY=y; }
+      else if (inShrink) { s.currX = x; s.currY = y; }          // точная траектория (без рывков)
       else { s.currX += (x-s.currX)*0.10; s.currY += (y-s.currY)*0.10; }
 
       s.angle += spin*dt;
@@ -402,4 +406,4 @@ function initSpaceBackground() {
 
     requestAnimationFrame(tick);
   })(performance.now());
-  }
+    }
