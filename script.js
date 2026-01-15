@@ -1,4 +1,5 @@
-const skillsButton = document.getElementById('skillsButton');
+document.addEventListener('DOMContentLoaded', () => {
+  const skillsButton = document.getElementById('skillsButton');
   if (skillsButton) {
     skillsButton.addEventListener('click', () => {
       alert(
@@ -25,27 +26,21 @@ function initSpaceBackground() {
   const hero = document.querySelector('.hero');
   if (!hero) return;
 
-  // ====== НАСТРОЙКИ ======
   const IMG_DIR = './';
   const EXT = '.png';
 
-  // Nebula twinkle
   const NEBULA_MIN_OPACITY = 0.15;
   const NEBULA_MAX_OPACITY = 0.35;
   const NEBULA_TWINKLE_SPEED = 0.22;
 
-  // FPS cap
   const FPS = 24;
   const FRAME_INTERVAL = 1000 / FPS;
 
-  // Planet effects per-object independent cycle
   const PLANET_EFFECT_ORDER = ['spiral', 'explore', 'shrinkExit'];
 
-  // remove old scene
   const oldScene = hero.querySelector('#spaceScene');
   if (oldScene) oldScene.remove();
 
-  // ====== DOM ======
   const scene = document.createElement('div');
   scene.id = 'spaceScene';
   hero.appendChild(scene);
@@ -82,7 +77,6 @@ function initSpaceBackground() {
   });
   scene.appendChild(objLayer);
 
-  // ====== sizes ======
   let W = 1, H = 1;
   function resize() {
     const rect = hero.getBoundingClientRect();
@@ -92,20 +86,16 @@ function initSpaceBackground() {
   resize();
   window.addEventListener('resize', resize);
 
-  // ====== pointer ======
   let mouseX = W / 2, mouseY = H / 2;
-
   function setPointer(e) {
     const rect = hero.getBoundingClientRect();
     const p = e.touches?.[0] ?? e;
     mouseX = (p.clientX ?? rect.left) - rect.left;
     mouseY = (p.clientY ?? rect.top) - rect.top;
   }
-
   hero.addEventListener('pointermove', setPointer, { passive: true });
   hero.addEventListener('touchmove', setPointer, { passive: true });
 
-  // ====== utils ======
   const rand = (a, b) => a + Math.random() * (b - a);
   const clamp01 = (v) => Math.max(0, Math.min(1, v));
   const easeInOutSine = (t) => 0.5 - 0.5 * Math.cos(Math.PI * t);
@@ -115,14 +105,11 @@ function initSpaceBackground() {
     return { x: dx / d, y: dy / d };
   }
 
-  // ====== stars (CSS twinkle) ======
+  // Stars (CSS twinkle)
   (function initStars() {
     const style = document.createElement('style');
     style.textContent = `
-      @keyframes starTwinkle {
-        0% { opacity: var(--o1); }
-        100% { opacity: var(--o2); }
-      }
+      @keyframes starTwinkle { 0% {opacity: var(--o1);} 100% {opacity: var(--o2);} }
     `;
     document.head.appendChild(style);
 
@@ -147,27 +134,22 @@ function initSpaceBackground() {
         animation: `starTwinkle ${dur}s ease-in-out ${delay}s infinite alternate`,
         pointerEvents: 'none'
       });
-
       el.style.setProperty('--o1', o1.toFixed(2));
       el.style.setProperty('--o2', o2.toFixed(2));
       starLayer.appendChild(el);
     }
   })();
 
-  // ====== ASSETS ======
   const ASSETS = [
-    // nebula
     { name: 'nebula1', type: 'nebula', size: 980, opacity: 0.28, x: 0.50, y: 0.45 },
     { name: 'nebula2', type: 'nebula', size: 900, opacity: 0.30, x: 0.22, y: 0.70 },
     { name: 'nebula3', type: 'nebula', size: 860, opacity: 0.32, x: 0.80, y: 0.25 },
 
-    // galaxies
     { name: 'galaxy1', type: 'galaxy', size: 120, opacity: 0.85, x: 0.12, y: 0.55, idleSpinMs: 160000 },
     { name: 'galaxy2', type: 'galaxy', size: 70,  opacity: 0.52, x: 0.88, y: 0.65, idleSpinMs: 150000 },
     { name: 'galaxy3', type: 'galaxy', size: 160, opacity: 0.48, x: 0.62, y: 0.16, idleSpinMs: 180000 },
     { name: 'galaxy4', type: 'galaxy', size: 200, opacity: 0.45, x: 0.40, y: 0.78, idleSpinMs: 200000 },
 
-    // planets
     { name: 'sun',     type: 'planet', size: 70,  opacity: 0.85, x: 0.82, y: 0.28, idleSpinMs: 120000 },
     { name: 'saturn',  type: 'planet', size: 330, opacity: 0.94, x: 0.18, y: 0.40, idleSpinMs: 200000 },
     { name: 'jupiter', type: 'planet', size: 280, opacity: 0.94, x: 0.74, y: 0.78, idleSpinMs: 180000 },
@@ -179,7 +161,14 @@ function initSpaceBackground() {
     { name: 'pluton',  type: 'planet', size: 160, opacity: 0.90, x: 0.92, y: 0.14, idleSpinMs: 210000 }
   ];
 
-  // ====== sprites ======
+  let anyLoaded = false;
+  function markAnyLoaded() {
+    if (!anyLoaded) {
+      anyLoaded = true;
+      hero.classList.add('space-ready');
+    }
+  }
+
   function createSprite(asset) {
     const layer = asset.type === 'nebula' ? bgLayer : objLayer;
 
@@ -195,12 +184,8 @@ function initSpaceBackground() {
     img.decoding = 'async';
     img.loading = 'eager';
     img.draggable = false;
-    img.src = `${IMG_DIR}${asset.name}${EXT}`;
     img.style.animation = 'none';
     img.style.filter = 'none';
-
-    wrap.appendChild(img);
-    layer.appendChild(wrap);
 
     const bx = clamp01(asset.x + rand(-0.02, 0.02));
     const by = clamp01(asset.y + rand(-0.02, 0.02));
@@ -234,7 +219,6 @@ function initSpaceBackground() {
       effect: null,
       explore: null,
 
-      // galaxy extra "spit" reaction (overlay)
       spit: null,
 
       effectIndex: 0,
@@ -242,24 +226,41 @@ function initSpaceBackground() {
       twPhase: asset.type === 'nebula' ? rand(0, Math.PI * 2) : 0
     };
 
-    img.addEventListener('load', () => {
+    const onLoad = () => {
       sprite.ready = true;
-      hero.classList.add('space-ready');
+      markAnyLoaded();
       sprite.currX = sprite.bx * W;
       sprite.currY = sprite.by * H;
-    });
+    };
 
-    img.addEventListener('error', () => {
+    const onError = () => {
       sprite.ready = false;
       wrap.style.display = 'none';
-    });
+      markAnyLoaded(); // чтобы не зависнуть полностью, даже если часть картинок не найдена
+      console.warn('Image load error:', img.src);
+    };
+
+    // ВАЖНО: listeners до src
+    img.addEventListener('load', onLoad);
+    img.addEventListener('error', onError);
+
+    img.src = `${IMG_DIR}${asset.name}${EXT}`;
+
+    // cache-safe: если уже в кеше — load может не прилететь
+    if (img.complete) {
+      if (img.naturalWidth > 0) onLoad();
+      else onError();
+    }
+
+    wrap.appendChild(img);
+    layer.appendChild(wrap);
 
     return sprite;
   }
 
   const sprites = ASSETS.map(createSprite);
 
-  // ====== helpers: galaxy portal ======
+  // ====== helpers: portal galaxies ======
   function getGalaxyByName(name) {
     return sprites.find(s => s.type === 'galaxy' && s.name === name && s.ready);
   }
@@ -277,21 +278,18 @@ function initSpaceBackground() {
     return { x: g.currX ?? (g.bx * W), y: g.currY ?? (g.by * H) };
   }
 
-  // ====== NEW: trigger galaxy "spit" (compress+shake+recoil) ======
+  // ====== galaxy spit overlay ======
   function triggerGalaxySpit(portalName, t, dirX, dirY) {
     if (!portalName) return;
     const g = getGalaxyByName(portalName);
     if (!g) return;
 
-    const d = normDir(dirX, dirY); // direction of emitted object
+    const d = normDir(dirX, dirY);
     g.spit = {
       start: t,
       duration: 0.65,
-      // compress to 0.75 at peak => 25%
       compress: 0.25,
-      // shake amplitude in px
       shakeAmp: 7,
-      // recoil opposite to emission
       recoilAmp: 10,
       dirX: d.x,
       dirY: d.y
@@ -304,7 +302,7 @@ function initSpaceBackground() {
       type: 'galaxySpin',
       start: t,
       duration: 5,
-      boost: -12.0,   // fast CCW
+      boost: -12.0,
       shakeAmp: 6,
       pulseAmp: 0.25
     };
@@ -336,11 +334,9 @@ function initSpaceBackground() {
         tx: rand(60, W - 60),
         ty: rand(60, H - 60),
         nextSwitch: t + rand(0.7, 1.6),
-
         jump: null,
         nextJumpAt: t + rand(2.0, 5.0)
       };
-
       sprite.effect = { type: 'explore', start: t, duration: 30 };
       return;
     }
@@ -413,7 +409,6 @@ function initSpaceBackground() {
       if (!best) return;
 
       const t = performance.now() / 1000;
-
       if (best.type === 'galaxy') startGalaxySpin(best, t);
       if (best.type === 'planet') startPlanetNext(best, t);
     },
@@ -469,12 +464,10 @@ function initSpaceBackground() {
       s.wrap.style.transform = `translate3d(${(x - s.size / 2)}px, ${(y - s.size / 2)}px, 0)`;
     }
 
-    // objects
     for (const s of sprites) {
       if (!s.ready) continue;
       if (s.type === 'nebula') continue;
 
-      // idle drift
       let x = s.bx * W + Math.sin(t * s.floatFx + s.phx) * s.floatAx;
       let y = s.by * H + Math.cos(t * s.floatFy + s.phy) * s.floatAy;
 
@@ -482,7 +475,7 @@ function initSpaceBackground() {
       let spinSpeed = s.spinBase;
       let shakeX = 0, shakeY = 0;
 
-      // ---------- galaxy spit overlay (compress+shake+recoil) ----------
+      // galaxy spit overlay
       if (s.type === 'galaxy' && s.spit) {
         const sp = s.spit;
         const st = (t - sp.start) / sp.duration;
@@ -490,19 +483,13 @@ function initSpaceBackground() {
         if (st >= 1 || st < 0) {
           s.spit = null;
         } else {
-          // envelope 0..1..0
           const env = Math.sin(st * Math.PI);
+          scale *= (1 - sp.compress * env);
 
-          // compress scale
-          const compressMul = 1 - sp.compress * env;
-          scale *= compressMul;
-
-          // shake
           const amp = sp.shakeAmp * env;
           shakeX += Math.sin(t * 70 + s.bx * 999) * amp;
           shakeY += Math.cos(t * 78 + s.by * 999) * amp;
 
-          // recoil opposite to emission direction
           const recoil = sp.recoilAmp * env;
           shakeX += (-sp.dirX) * recoil;
           shakeY += (-sp.dirY) * recoil;
@@ -544,14 +531,12 @@ function initSpaceBackground() {
             };
           }
 
-          // смена целей
           if (t > s.explore.nextSwitch) {
             s.explore.tx = rand(60, W - 60);
             s.explore.ty = rand(60, H - 60);
             s.explore.nextSwitch = t + rand(0.7, 1.6);
           }
 
-          // старт портального прыжка
           if (!s.explore.jump && t > s.explore.nextJumpAt) {
             s.explore.jump = {
               start: t,
@@ -561,22 +546,18 @@ function initSpaceBackground() {
             };
           }
 
-          // базовое движение к цели
           const follow = 0.05;
           s.explore.x += (s.explore.tx - s.explore.x) * follow;
           s.explore.y += (s.explore.ty - s.explore.y) * follow;
 
-          // базовая поза explore
           x = s.explore.x;
           y = s.explore.y;
 
-          // базовый scale и быстрый CW спин
           const tt = t - eff.start;
           const baseExploreScale = 0.85 + 0.35 * (0.5 + 0.5 * Math.sin(tt * 0.9));
           scale *= baseExploreScale;
           spinSpeed = Math.abs((2 * Math.PI) / 1.1);
 
-          // если идёт прыжок
           if (s.explore.jump) {
             const j = s.explore.jump;
             const jt = (t - j.start) / j.duration;
@@ -596,18 +577,15 @@ function initSpaceBackground() {
                 if (phase === 2) {
                   const portal = getPortalCenterByName(j.portalName);
 
-                  // телепорт в портал
                   s.currX = portal.x;
                   s.currY = portal.y;
 
-                  // новая цель после портала
                   s.explore.x = portal.x;
                   s.explore.y = portal.y;
                   s.explore.tx = rand(60, W - 60);
                   s.explore.ty = rand(60, H - 60);
                   s.explore.nextSwitch = t + rand(0.7, 1.6);
 
-                  // ---- НОВОЕ: "галактика выплёвывает объект" ----
                   const d = normDir(s.explore.tx - portal.x, s.explore.ty - portal.y);
                   triggerGalaxySpit(j.portalName, t, d.x, d.y);
                 }
@@ -645,7 +623,6 @@ function initSpaceBackground() {
               s.currX = portal.x;
               s.currY = portal.y;
 
-              // ---- НОВОЕ: "галактика выплёвывает объект" ----
               const d = normDir(eff.startX - portal.x, eff.startY - portal.y);
               triggerGalaxySpit(eff.portalName, t, d.x, d.y);
             }
@@ -671,8 +648,8 @@ function initSpaceBackground() {
             scale = p;
           }
         }
-                                                 }
-      // smooth position
+      }
+
       const smoothPos = 0.10;
       if (s.currX == null) {
         s.currX = x;
@@ -682,14 +659,12 @@ function initSpaceBackground() {
         s.currY += (y - s.currY) * smoothPos;
       }
 
-      // rotation
       s.angle += spinSpeed * dt;
 
       const tx = (s.currX + shakeX) - s.size / 2;
       const ty = (s.currY + shakeY) - s.size / 2;
       s.wrap.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
       s.img.style.transform = `rotate(${s.angle}rad) scale(${scale})`;
-
       s.wrap.style.opacity = String(s.baseOpacity);
     }
 
