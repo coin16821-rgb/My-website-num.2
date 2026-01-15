@@ -407,3 +407,45 @@ function initSpaceBackground() {
     requestAnimationFrame(tick);
   })(performance.now());
     }
+
+// ===== Nebula blend + twinkling stars (call once after bgLayer exists) =====
+function enhanceNebulaBlendAndStars() {
+  const bgLayer = document.getElementById('spaceBgLayer');
+  if (!bgLayer) return;
+
+  // 1) Создаём звёзды (если ещё нет)
+  if (!bgLayer.querySelector('#spaceStars')) {
+    const stars = document.createElement('div');
+    stars.id = 'spaceStars';
+    bgLayer.appendChild(stars);
+
+    const count = window.innerWidth < 768 ? 70 : 120;
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('div');
+      s.className = 'space-star';
+
+      const size = (Math.random() < 0.85) ? 1 : 2;
+      const o1 = 0.10 + Math.random() * 0.35;
+      const o2 = 0.45 + Math.random() * 0.50;
+      const dur = 1.8 + Math.random() * 4.2;
+      const del = Math.random() * 2.5;
+
+      s.style.left = (Math.random() * 100).toFixed(3) + '%';
+      s.style.top  = (Math.random() * 100).toFixed(3) + '%';
+      s.style.setProperty('--s', size + 'px');
+      s.style.setProperty('--o1', o1.toFixed(2));
+      s.style.setProperty('--o2', o2.toFixed(2));
+      s.style.setProperty('--d', dur.toFixed(2) + 's');
+      s.style.setProperty('--del', del.toFixed(2) + 's');
+      stars.appendChild(s);
+    }
+  }
+
+  // 2) Делаем неровные “перья” у nebula (случайный центр маски)
+  document.querySelectorAll('.space-sprite--nebula').forEach(wrap => {
+    if (!wrap.style.getPropertyValue('--mx')) {
+      wrap.style.setProperty('--mx', (30 + Math.random() * 40).toFixed(1) + '%'); // 30..70%
+      wrap.style.setProperty('--my', (30 + Math.random() * 40).toFixed(1) + '%');
+    }
+  });
+}
