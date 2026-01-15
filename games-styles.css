@@ -143,3 +143,47 @@
         padding: 6rem 1rem 2rem;
     }
 }
+/* Touch controls for mobile */
+.touch-ui {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-pad, .touch-actions {
+  position: absolute;
+  bottom: 14px;
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.touch-pad { left: 14px; grid-template-columns: repeat(2, 64px); }
+.touch-actions { right: 14px; grid-template-columns: repeat(2, 92px); justify-items: end; }
+
+.tbtn {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(20, 30, 60, .55);
+  color: #e8e8e8;
+  font-weight: 700;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.tbtn.big { width: 92px; }
+
+@media (max-width: 420px) {
+  .touch-pad { grid-template-columns: repeat(2, 56px); }
+  .tbtn { width: 56px; height: 56px; }
+  .tbtn.big { width: 86px; }
+}
+
+/* важно: не даём браузеру скроллить/зумить во время игры */
+html, body { overscroll-behavior: none; }
+
