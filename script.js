@@ -1,5 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const skillsButton = document.getElementById('skillsButton');
+const skillsButton = document.getElementById('skillsButton');
   if (skillsButton) {
     skillsButton.addEventListener('click', () => {
       alert(
@@ -654,4 +653,48 @@ function initSpaceBackground() {
 
           if (phase === 0) {
             const p = et / 0.45;
-            x = eff.startX + eff.dirX * 
+            x = eff.startX + eff.dirX * eff.midDist * p;
+            y = eff.startY + eff.dirY * eff.midDist * p;
+            scale = 1 - p;
+          } else if (phase === 1) {
+            const p = (et - 0.45) / 0.10;
+            const midX = eff.startX + eff.dirX * eff.midDist;
+            const midY = eff.startY + eff.dirY * eff.midDist;
+            x = midX + (eff.exitX - midX) * p;
+            y = midY + (eff.exitY - midY) * p;
+            scale = 0;
+          } else {
+            const p = (et - 0.55) / 0.45;
+            const portal = getPortalCenterByName(eff.portalName);
+            x = portal.x + (eff.startX - portal.x) * p;
+            y = portal.y + (eff.startY - portal.y) * p;
+            scale = p;
+          }
+        }
+                                                 }
+      // smooth position
+      const smoothPos = 0.10;
+      if (s.currX == null) {
+        s.currX = x;
+        s.currY = y;
+      } else {
+        s.currX += (x - s.currX) * smoothPos;
+        s.currY += (y - s.currY) * smoothPos;
+      }
+
+      // rotation
+      s.angle += spinSpeed * dt;
+
+      const tx = (s.currX + shakeX) - s.size / 2;
+      const ty = (s.currY + shakeY) - s.size / 2;
+      s.wrap.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      s.img.style.transform = `rotate(${s.angle}rad) scale(${scale})`;
+
+      s.wrap.style.opacity = String(s.baseOpacity);
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+}
