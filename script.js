@@ -1,24 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const skillsButton = document.getElementById('skillsButton');
-  if (skillsButton) {
-    skillsButton.addEventListener('click', () => {
-      alert(
-        'Навыки:\n\n' +
-        '• HTML/CSS/JavaScript\n' +
-        '• Основы программирования\n' +
-        '• Работа с Git\n' +
-        '• Изучение AI и машинного обучения\n' +
-        '• Веб-разработка\n\n' +
-        'Постоянно изучаю новые технологии!'
-      );
-    });
-  }
-
-  const contactForm = document.getElementById('contactForm');
-  if (contactForm) {
-    contactForm.addEventListener('submit', () => console.log('Форма отправлена'));
-  }
-
+  const b = document.getElementById('skillsButton');
+  if (b) b.addEventListener('click', () => alert(
+    'Навыки:\n\n• HTML/CSS/JavaScript\n• Основы программирования\n• Работа с Git\n• Изучение AI и машинного обучения\n• Веб-разработка\n\nПостоянно изучаю новые технологии!'
+  ));
+  const f = document.getElementById('contactForm');
+  if (f) f.addEventListener('submit', () => console.log('Форма отправлена'));
   initSpaceBackground();
 });
 
@@ -26,160 +12,110 @@ function initSpaceBackground() {
   const hero = document.querySelector('.hero');
   if (!hero) return;
 
-  const IMG_DIR = './';
-  const EXT = '.png';
+  const IMG_DIR = './', EXT = '.png';
+  const FPS = 24, FRAME = 1000 / FPS;
 
-  const NEBULA_MIN_OPACITY = 0.15;
-  const NEBULA_MAX_OPACITY = 0.35;
-  const NEBULA_TWINKLE_SPEED = 0.22;
+  const NEB_MIN = 0.15, NEB_MAX = 0.35, NEB_SPEED = 0.22;
+  const ORDER = ['spiral', 'explore', 'shrinkExit'];
 
-  const FPS = 24;
-  const FRAME_INTERVAL = 1000 / FPS;
+  const rand = (a,b)=>a+Math.random()*(b-a);
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+  const ease = t => 0.5 - 0.5 * Math.cos(Math.PI * t);
+  const norm = (dx,dy)=>{const d=Math.hypot(dx,dy)||1; return {x:dx/d,y:dy/d};};
 
-  const PLANET_EFFECT_ORDER = ['spiral', 'explore', 'shrinkExit'];
+  // reset scene
+  hero.querySelector('#spaceScene')?.remove();
 
-  const oldScene = hero.querySelector('#spaceScene');
-  if (oldScene) oldScene.remove();
+  // scene layers
+  const scene = document.createElement('div'); scene.id='spaceScene'; hero.appendChild(scene);
 
-  const scene = document.createElement('div');
-  scene.id = 'spaceScene';
-  hero.appendChild(scene);
-
-  const bgLayer = document.createElement('div');
-  bgLayer.id = 'spaceBgLayer';
-  Object.assign(bgLayer.style, {
-    position: 'absolute',
-    inset: '0',
-    zIndex: '0',
-    pointerEvents: 'none',
-    willChange: 'transform',
-    transform: 'translate3d(0,0,0) scale(1.08)'
-  });
+  const bgLayer = document.createElement('div'); bgLayer.id='spaceBgLayer';
+  Object.assign(bgLayer.style,{position:'absolute',inset:'0',zIndex:'0',pointerEvents:'none',willChange:'transform',transform:'translate3d(0,0,0) scale(1.08)'});
   scene.appendChild(bgLayer);
 
   const starLayer = document.createElement('div');
-  Object.assign(starLayer.style, {
-    position: 'absolute',
-    inset: '0',
-    zIndex: '1',
-    pointerEvents: 'none',
-    overflow: 'hidden'
-  });
+  Object.assign(starLayer.style,{position:'absolute',inset:'0',zIndex:'1',pointerEvents:'none',overflow:'hidden'});
   scene.appendChild(starLayer);
 
-  const objLayer = document.createElement('div');
-  objLayer.id = 'spaceObjLayer';
-  Object.assign(objLayer.style, {
-    position: 'absolute',
-    inset: '0',
-    zIndex: '2',
-    pointerEvents: 'none'
-  });
+  const objLayer = document.createElement('div'); objLayer.id='spaceObjLayer';
+  Object.assign(objLayer.style,{position:'absolute',inset:'0',zIndex:'2',pointerEvents:'none'});
   scene.appendChild(objLayer);
 
-  let W = 1, H = 1;
-  function resize() {
-    const rect = hero.getBoundingClientRect();
-    W = Math.max(1, Math.floor(rect.width));
-    H = Math.max(1, Math.floor(rect.height));
-  }
-  resize();
-  window.addEventListener('resize', resize);
+  hero.classList.add('space-ready');
 
-  let mouseX = W / 2, mouseY = H / 2;
-  function setPointer(e) {
-    const rect = hero.getBoundingClientRect();
-    const p = e.touches?.[0] ?? e;
-    mouseX = (p.clientX ?? rect.left) - rect.left;
-    mouseY = (p.clientY ?? rect.top) - rect.top;
-  }
-  hero.addEventListener('pointermove', setPointer, { passive: true });
-  hero.addEventListener('touchmove', setPointer, { passive: true });
+  // sizes
+  let W=1,H=1;
+  const resize=()=>{const r=hero.getBoundingClientRect(); W=Math.max(1,r.width|0); H=Math.max(1,r.height|0);};
+  resize(); addEventListener('resize', resize);
 
-  const rand = (a, b) => a + Math.random() * (b - a);
-  const clamp01 = (v) => Math.max(0, Math.min(1, v));
-  const easeInOutSine = (t) => 0.5 - 0.5 * Math.cos(Math.PI * t);
+  // pointer
+  let mouseX=W/2, mouseY=H/2;
+  const setPointer = (e)=>{
+    const r=hero.getBoundingClientRect(); const p=e.touches?.[0]??e;
+    mouseX=(p.clientX-r.left); mouseY=(p.clientY-r.top);
+  };
+  hero.addEventListener('pointermove', setPointer, {passive:true});
+  hero.addEventListener('touchmove', setPointer, {passive:true});
 
-  function normDir(dx, dy) {
-    const d = Math.hypot(dx, dy) || 1;
-    return { x: dx / d, y: dy / d };
-  }
-
-  // Stars (CSS twinkle)
-  (function initStars() {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes starTwinkle { 0% {opacity: var(--o1);} 100% {opacity: var(--o2);} }
-    `;
-    document.head.appendChild(style);
-
-    const STAR_COUNT = 70;
-    for (let i = 0; i < STAR_COUNT; i++) {
-      const el = document.createElement('div');
-      const size = rand(1, 2);
-      const dur = rand(1.8, 5.2);
-      const delay = rand(0, 2.5);
-      const o1 = rand(0.10, 0.45);
-      const o2 = rand(0.35, 0.85);
-
-      Object.assign(el.style, {
-        position: 'absolute',
-        left: (Math.random() * 100) + '%',
-        top: (Math.random() * 100) + '%',
-        width: size + 'px',
-        height: size + 'px',
-        borderRadius: '50%',
-        background: 'rgba(255,255,255,0.95)',
-        opacity: o1,
-        animation: `starTwinkle ${dur}s ease-in-out ${delay}s infinite alternate`,
-        pointerEvents: 'none'
+  // stars (CSS twinkle)
+  (() => {
+    const st = document.createElement('style');
+    st.textContent = `@keyframes starTwinkle{0%{opacity:var(--o1)}100%{opacity:var(--o2)}}`;
+    document.head.appendChild(st);
+    for (let i=0;i<70;i++){
+      const el=document.createElement('div');
+      const o1=rand(0.10,0.45), o2=rand(0.35,0.85);
+      Object.assign(el.style,{
+        position:'absolute',left:(Math.random()*100)+'%',top:(Math.random()*100)+'%',
+        width:rand(1,2)+'px',height:rand(1,2)+'px',borderRadius:'50%',
+        background:'rgba(255,255,255,0.95)',opacity:o1,
+        animation:`starTwinkle ${rand(1.8,5.2)}s ease-in-out ${rand(0,2.5)}s infinite alternate`,
+        pointerEvents:'none'
       });
-      el.style.setProperty('--o1', o1.toFixed(2));
-      el.style.setProperty('--o2', o2.toFixed(2));
+      el.style.setProperty('--o1', o1.toFixed(2)); el.style.setProperty('--o2', o2.toFixed(2));
       starLayer.appendChild(el);
     }
   })();
 
-  const ASSETS = [
-    { name: 'nebula1', type: 'nebula', size: 980, opacity: 0.28, x: 0.50, y: 0.45 },
-    { name: 'nebula2', type: 'nebula', size: 900, opacity: 0.30, x: 0.22, y: 0.70 },
-    { name: 'nebula3', type: 'nebula', size: 860, opacity: 0.32, x: 0.80, y: 0.25 },
-
-    { name: 'galaxy1', type: 'galaxy', size: 120, opacity: 0.85, x: 0.12, y: 0.55, idleSpinMs: 160000 },
-    { name: 'galaxy2', type: 'galaxy', size: 70,  opacity: 0.52, x: 0.88, y: 0.65, idleSpinMs: 150000 },
-    { name: 'galaxy3', type: 'galaxy', size: 160, opacity: 0.48, x: 0.62, y: 0.16, idleSpinMs: 180000 },
-    { name: 'galaxy4', type: 'galaxy', size: 200, opacity: 0.45, x: 0.40, y: 0.78, idleSpinMs: 200000 },
-
-    { name: 'sun',     type: 'planet', size: 70,  opacity: 0.85, x: 0.82, y: 0.28, idleSpinMs: 120000 },
-    { name: 'saturn',  type: 'planet', size: 330, opacity: 0.94, x: 0.18, y: 0.40, idleSpinMs: 200000 },
-    { name: 'jupiter', type: 'planet', size: 280, opacity: 0.94, x: 0.74, y: 0.78, idleSpinMs: 180000 },
-    { name: 'earth',   type: 'planet', size: 240, opacity: 0.95, x: 0.30, y: 0.20, idleSpinMs: 160000 },
-    { name: 'venera',  type: 'planet', size: 210, opacity: 0.93, x: 0.88, y: 0.52, idleSpinMs: 170000 },
-    { name: 'mars',    type: 'planet', size: 40,  opacity: 0.63, x: 0.24, y: 0.78, idleSpinMs: 100000 },
-    { name: 'neptun',  type: 'planet', size: 230, opacity: 0.93, x: 0.08, y: 0.18, idleSpinMs: 190000 },
-    { name: 'moon',    type: 'planet', size: 50,  opacity: 0.92, x: 0.65, y: 0.88, idleSpinMs: 140000 },
-    { name: 'pluton',  type: 'planet', size: 160, opacity: 0.90, x: 0.92, y: 0.14, idleSpinMs: 210000 }
+  // assets compact
+  const neb = [
+    ['nebula1',980,0.28,0.50,0.45],
+    ['nebula2',900,0.30,0.22,0.70],
+    ['nebula3',860,0.32,0.80,0.25],
+  ];
+  const gal = [
+    ['galaxy1',120,0.85,0.12,0.55,160000],
+    ['galaxy2', 70,0.52,0.88,0.65,150000],
+    ['galaxy3',160,0.48,0.62,0.16,180000],
+    ['galaxy4',200,0.45,0.40,0.78,200000],
+  ];
+  const pla = [
+    ['sun',70,0.85,0.82,0.28,120000],
+    ['saturn',330,0.94,0.18,0.40,200000],
+    ['jupiter',280,0.94,0.74,0.78,180000],
+    ['earth',240,0.95,0.30,0.20,160000],
+    ['venera',210,0.93,0.88,0.52,170000],
+    ['mars',40,0.63,0.24,0.78,100000],
+    ['neptun',230,0.93,0.08,0.18,190000],
+    ['moon',50,0.92,0.65,0.88,140000],
+    ['pluton',160,0.90,0.92,0.14,210000],
   ];
 
+  const sprites = [];
   let anyLoaded = false;
-  function markAnyLoaded() {
-    if (!anyLoaded) {
-      anyLoaded = true;
-      hero.classList.add('space-ready');
-    }
-  }
+  const markLoaded = () => { if (!anyLoaded) { anyLoaded = true; hero.classList.add('space-ready'); } };
 
-  function createSprite(asset) {
-    const layer = asset.type === 'nebula' ? bgLayer : objLayer;
+  function makeSprite(type, name, size, opacity, x, y, idleSpinMs) {
+    const layer = (type === 'nebula') ? bgLayer : objLayer;
 
     const wrap = document.createElement('div');
-    wrap.className = `space-sprite space-sprite--${asset.type}`;
-    wrap.style.setProperty('--size', `${asset.size}px`);
-    wrap.style.opacity = String(asset.opacity);
+    wrap.className = `space-sprite space-sprite--${type}`;
+    wrap.style.setProperty('--size', size+'px');
+    wrap.style.opacity = String(opacity);
 
     const img = document.createElement('img');
     img.className = 'space-sprite__img';
-    img.id = asset.name;
+    img.id = name;
     img.alt = '';
     img.decoding = 'async';
     img.loading = 'eager';
@@ -187,490 +123,283 @@ function initSpaceBackground() {
     img.style.animation = 'none';
     img.style.filter = 'none';
 
-    const bx = clamp01(asset.x + rand(-0.02, 0.02));
-    const by = clamp01(asset.y + rand(-0.02, 0.02));
+    const bx = clamp01(x + rand(-0.02,0.02));
+    const by = clamp01(y + rand(-0.02,0.02));
 
-    const idleSpinMs = Math.max(90000, asset.idleSpinMs ?? 160000);
-    const dir = Math.random() < 0.5 ? 1 : -1;
-    const spinBase = (2 * Math.PI) / (idleSpinMs / 1000) * dir;
+    const ms = Math.max(90000, idleSpinMs || 160000);
+    const dir = Math.random()<0.5 ? 1 : -1;
+    const spinBase = (2*Math.PI) / (ms/1000) * dir;
 
-    const sprite = {
-      ...asset,
-      wrap,
-      img,
-      bx,
-      by,
-      baseOpacity: asset.opacity,
-      ready: false,
-
-      floatAx: rand(3, 9),
-      floatAy: rand(3, 9),
-      floatFx: rand(0.04, 0.10),
-      floatFy: rand(0.04, 0.10),
-      phx: rand(0, Math.PI * 2),
-      phy: rand(0, Math.PI * 2),
-
-      currX: null,
-      currY: null,
-
-      angle: 0,
-      spinBase,
-
-      effect: null,
-      explore: null,
-
-      spit: null,
-
-      effectIndex: 0,
-
-      twPhase: asset.type === 'nebula' ? rand(0, Math.PI * 2) : 0
+    const s = {
+      type, name, size, baseOpacity: opacity,
+      wrap, img, bx, by,
+      ready:false,
+      currX:null, currY:null,
+      angle:0, spinBase,
+      floatAx: rand(3,9), floatAy: rand(3,9),
+      floatFx: rand(0.04,0.10), floatFy: rand(0.04,0.10),
+      phx: rand(0,Math.PI*2), phy: rand(0,Math.PI*2),
+      twPhase: type==='nebula' ? rand(0,Math.PI*2) : 0,
+      effect:null, explore:null, spit:null,
+      effectIndex:0
     };
 
     const onLoad = () => {
-      sprite.ready = true;
-      markAnyLoaded();
-      sprite.currX = sprite.bx * W;
-      sprite.currY = sprite.by * H;
+      s.ready = true;
+      s.currX = s.bx * W;
+      s.currY = s.by * H;
+      markLoaded();
     };
-
     const onError = () => {
-      sprite.ready = false;
       wrap.style.display = 'none';
-      markAnyLoaded(); // чтобы не зависнуть полностью, даже если часть картинок не найдена
+      s.ready = false;
+      markLoaded();
       console.warn('Image load error:', img.src);
     };
 
-    // ВАЖНО: listeners до src
     img.addEventListener('load', onLoad);
     img.addEventListener('error', onError);
 
-    img.src = `${IMG_DIR}${asset.name}${EXT}`;
-
-    // cache-safe: если уже в кеше — load может не прилететь
-    if (img.complete) {
-      if (img.naturalWidth > 0) onLoad();
-      else onError();
-    }
+    img.src = `${IMG_DIR}${name}${EXT}`;
+    if (img.complete) (img.naturalWidth > 0 ? onLoad() : onError());
 
     wrap.appendChild(img);
     layer.appendChild(wrap);
 
-    return sprite;
+    sprites.push(s);
   }
 
-  const sprites = ASSETS.map(createSprite);
+  neb.forEach(a => makeSprite('nebula', ...a));
+  gal.forEach(a => makeSprite('galaxy', ...a));
+  pla.forEach(a => makeSprite('planet', ...a));
 
-  // ====== helpers: portal galaxies ======
-  function getGalaxyByName(name) {
-    return sprites.find(s => s.type === 'galaxy' && s.name === name && s.ready);
-  }
+  const galaxyNames = ['galaxy1','galaxy2','galaxy3','galaxy4'];
+  const getGalaxy = (n)=>sprites.find(s=>s.type==='galaxy' && s.name===n && s.ready);
+  const pickPortal = ()=>{
+    const ready = galaxyNames.filter(n=>!!getGalaxy(n));
+    return ready.length ? ready[(Math.random()*ready.length)|0] : null;
+  };
+  const portalCenter = (n)=>{
+    const g=getGalaxy(n);
+    return g ? {x:(g.currX ?? g.bx*W), y:(g.currY ?? g.by*H)} : {x:W/2,y:H/2};
+  };
 
-  function pickPortalGalaxyName() {
-    const names = ['galaxy1', 'galaxy2', 'galaxy3', 'galaxy4'];
-    const ready = names.filter(n => !!getGalaxyByName(n));
-    if (ready.length === 0) return null;
-    return ready[Math.floor(Math.random() * ready.length)];
-  }
-
-  function getPortalCenterByName(name) {
-    const g = getGalaxyByName(name);
-    if (!g) return { x: W / 2, y: H / 2 };
-    return { x: g.currX ?? (g.bx * W), y: g.currY ?? (g.by * H) };
-  }
-
-  // ====== galaxy spit overlay ======
-  function triggerGalaxySpit(portalName, t, dirX, dirY) {
-    if (!portalName) return;
-    const g = getGalaxyByName(portalName);
+  // galaxy spit overlay (compress+shake+recoil)
+  function galaxySpit(portalName, t, dx, dy) {
+    const g = getGalaxy(portalName);
     if (!g) return;
-
-    const d = normDir(dirX, dirY);
-    g.spit = {
-      start: t,
-      duration: 0.65,
-      compress: 0.25,
-      shakeAmp: 7,
-      recoilAmp: 10,
-      dirX: d.x,
-      dirY: d.y
-    };
+    const d = norm(dx, dy);
+    g.spit = { start:t, dur:0.65, compress:0.25, shake:3, recoil:5, dx:d.x, dy:d.y };
   }
 
-  // ====== effects start ======
-  function startGalaxySpin(sprite, t) {
-    sprite.effect = {
-      type: 'galaxySpin',
-      start: t,
-      duration: 5,
-      boost: -12.0,
-      shakeAmp: 4,
-      pulseAmp: 0.25
-    };
+  function startGalaxySpin(g, t) {
+    g.effect = { type:'galaxySpin', start:t, dur:5, boost:-12, shake:2.5, pulse:0.25 };
   }
 
-  function startPlanetNext(sprite, t) {
-    const type = PLANET_EFFECT_ORDER[sprite.effectIndex % PLANET_EFFECT_ORDER.length];
-    sprite.effectIndex++;
+  function startPlanetNext(p, t) {
+    const type = ORDER[p.effectIndex % ORDER.length];
+    p.effectIndex++;
 
     if (type === 'spiral') {
-      sprite.effect = {
-        type: 'spiral',
-        start: t,
-        duration: 12,
-        originX: sprite.currX ?? (sprite.bx * W),
-        originY: sprite.currY ?? (sprite.by * H),
-        baseAngle: Math.random() * Math.PI * 2,
-        dir: Math.random() < 0.5 ? 1 : -1,
-        turns: 4,
-        radius: 75
-      };
+      p.effect = { type:'spiral', start:t, dur:12, ox:(p.currX ?? p.bx*W), oy:(p.currY ?? p.by*H), a:Math.random()*Math.PI*2, dir:Math.random()<0.5?1:-1, turns:4, r:75 };
       return;
     }
 
     if (type === 'explore') {
-      sprite.explore = {
-        x: sprite.currX ?? (sprite.bx * W),
-        y: sprite.currY ?? (sprite.by * H),
-        tx: rand(60, W - 60),
-        ty: rand(60, H - 60),
-        nextSwitch: t + rand(0.7, 1.6),
-        jump: null,
-        nextJumpAt: t + rand(2.0, 5.0)
+      p.explore = {
+        x:(p.currX ?? p.bx*W), y:(p.currY ?? p.by*H),
+        tx:rand(60,W-60), ty:rand(60,H-60),
+        next: t + rand(0.7,1.6),
+        jump:null, nextJump: t + rand(2.0,5.0)
       };
-      sprite.effect = { type: 'explore', start: t, duration: 30 };
+      p.effect = { type:'explore', start:t, dur:30 };
       return;
     }
 
     if (type === 'shrinkExit') {
-      const startX = sprite.currX ?? (sprite.bx * W);
-      const startY = sprite.currY ?? (sprite.by * H);
-
-      const portalName = pickPortalGalaxyName();
-
-      const ang = Math.random() * Math.PI * 2;
-      const dirX = Math.cos(ang);
-      const dirY = Math.sin(ang);
-
-      const sides = ['top', 'right', 'bottom', 'left'];
-      const exitSide = sides[Math.floor(Math.random() * sides.length)];
-
-      function offscreen(side) {
-        if (side === 'top') return { x: rand(60, W - 60), y: -sprite.size * 2 };
-        if (side === 'bottom') return { x: rand(60, W - 60), y: H + sprite.size * 2 };
-        if (side === 'left') return { x: -sprite.size * 2, y: rand(60, H - 60) };
-        return { x: W + sprite.size * 2, y: rand(60, H - 60) };
-      }
-
-      const exitP = offscreen(exitSide);
-
-      sprite.effect = {
-        type: 'shrinkExit',
-        start: t,
-        duration: 15,
-        startX,
-        startY,
-        dirX,
-        dirY,
-        midDist: Math.min(W, H) * 0.35,
-        exitX: exitP.x,
-        exitY: exitP.y,
-        portalName,
-        phase: -1
-      };
+      const sx = (p.currX ?? p.bx*W), sy = (p.currY ?? p.by*H);
+      const portal = pickPortal();
+      p.effect = { type:'shrinkExit', start:t, dur:15, sx, sy, portal, phase:-1 };
     }
   }
 
-  // ====== click: stable choose nearest ======
-  hero.addEventListener(
-    'pointerdown',
-    (e) => {
-      if (e.target.closest('button, a, input, textarea, form, label')) return;
+  // click stable nearest
+  hero.addEventListener('pointerdown', (e)=>{
+    if (e.target.closest('button, a, input, textarea, form, label')) return;
+    setPointer(e);
 
-      setPointer(e);
-
-      let best = null;
-      let bestD = Infinity;
-
-      for (const s of sprites) {
-        if (!s.ready) continue;
-        if (s.type === 'nebula') continue;
-
-        const cx = s.currX ?? (s.bx * W);
-        const cy = s.currY ?? (s.by * H);
-        const d = Math.hypot(mouseX - cx, mouseY - cy);
-
-        const hitR = Math.max(70, s.size * 0.9);
-        if (d <= hitR && d < bestD) {
-          best = s;
-          bestD = d;
-        }
-      }
-
-      if (!best) return;
-
-      const t = performance.now() / 1000;
-      if (best.type === 'galaxy') startGalaxySpin(best, t);
-      if (best.type === 'planet') startPlanetNext(best, t);
-    },
-    { capture: true }
-  );
-
-  // ====== background parallax ======
-  let bgTx = 0, bgTy = 0;
-  function updateBgParallax(t) {
-    const nx = (mouseX / Math.max(1, W)) - 0.5;
-    const ny = (mouseY / Math.max(1, H)) - 0.5;
-
-    const targetX = -nx * 14 + Math.sin(t * 0.05) * 2.5;
-    const targetY = -ny * 9 + Math.cos(t * 0.05) * 2.0;
-
-    const smooth = 0.06;
-    bgTx += (targetX - bgTx) * smooth;
-    bgTy += (targetY - bgTy) * smooth;
-
-    bgLayer.style.transform = `translate3d(${bgTx}px, ${bgTy}px, 0) scale(1.08)`;
-  }
-
-  // ====== main loop ======
-  let lastFrame = 0;
-
-  function tick(now) {
-    if (document.hidden) {
-      requestAnimationFrame(tick);
-      return;
-    }
-
-    if (now - lastFrame < FRAME_INTERVAL) {
-      requestAnimationFrame(tick);
-      return;
-    }
-
-    const dt = lastFrame === 0 ? 1 / FPS : Math.min(0.05, (now - lastFrame) / 1000);
-    lastFrame = now;
-
-    const t = now / 1000;
-    updateBgParallax(t);
-
-    // nebula twinkle + placement
+    let best=null, bestD=1e9;
     for (const s of sprites) {
-      if (!s.ready || s.type !== 'nebula') continue;
+      if (!s.ready || s.type==='nebula') continue;
+      const cx = s.currX ?? s.bx*W, cy = s.currY ?? s.by*H;
+      const d = Math.hypot(mouseX-cx, mouseY-cy);
+      const hit = Math.max(70, s.size*0.9);
+      if (d <= hit && d < bestD) { best = s; bestD = d; }
+    }
+    if (!best) return;
+    const t = performance.now()/1000;
+    best.type==='galaxy' ? startGalaxySpin(best,t) : startPlanetNext(best,t);
+  }, {capture:true});
 
-      const osc = (Math.sin(t * NEBULA_TWINKLE_SPEED + s.twPhase) + 1) * 0.5;
-      const op = NEBULA_MIN_OPACITY + (NEBULA_MAX_OPACITY - NEBULA_MIN_OPACITY) * osc;
-      s.wrap.style.opacity = op.toFixed(3);
+  // bg parallax
+  let bgTx=0,bgTy=0;
+  const bgParallax=(t)=>{
+    const nx = mouseX/Math.max(1,W)-0.5, ny = mouseY/Math.max(1,H)-0.5;
+    const tx = -nx*14 + Math.sin(t*0.05)*2.5;
+    const ty = -ny*9  + Math.cos(t*0.05)*2.0;
+    bgTx += (tx-bgTx)*0.06; bgTy += (ty-bgTy)*0.06;
+    bgLayer.style.transform = `translate3d(${bgTx}px,${bgTy}px,0) scale(1.08)`;
+  };
 
-      const x = s.bx * W;
-      const y = s.by * H;
-      s.wrap.style.transform = `translate3d(${(x - s.size / 2)}px, ${(y - s.size / 2)}px, 0)`;
+  // main loop
+  let last=0;
+  (function tick(now){
+    if (document.hidden) return requestAnimationFrame(tick);
+    if (now-last < FRAME) return requestAnimationFrame(tick);
+
+    const dt = last ? Math.min(0.05,(now-last)/1000) : 1/FPS;
+    last = now;
+    const t = now/1000;
+
+    bgParallax(t);
+
+    // nebula twinkle + place
+    for (const s of sprites) if (s.ready && s.type==='nebula') {
+      const osc = (Math.sin(t*NEB_SPEED + s.twPhase)+1)*0.5;
+      s.wrap.style.opacity = (NEB_MIN + (NEB_MAX-NEB_MIN)*osc).toFixed(3);
+      const x=s.bx*W, y=s.by*H;
+      s.wrap.style.transform = `translate3d(${x-s.size/2}px,${y-s.size/2}px,0)`;
     }
 
     for (const s of sprites) {
-      if (!s.ready) continue;
-      if (s.type === 'nebula') continue;
+      if (!s.ready || s.type==='nebula') continue;
 
-      let x = s.bx * W + Math.sin(t * s.floatFx + s.phx) * s.floatAx;
-      let y = s.by * H + Math.cos(t * s.floatFy + s.phy) * s.floatAy;
+      let x = s.bx*W + Math.sin(t*s.floatFx + s.phx)*s.floatAx;
+      let y = s.by*H + Math.cos(t*s.floatFy + s.phy)*s.floatAy;
 
-      let scale = 1;
-      let spinSpeed = s.spinBase;
-      let shakeX = 0, shakeY = 0;
+      let scale = 1, spin = s.spinBase, shx=0, shy=0;
 
       // galaxy spit overlay
-      if (s.type === 'galaxy' && s.spit) {
-        const sp = s.spit;
-        const st = (t - sp.start) / sp.duration;
-
-        if (st >= 1 || st < 0) {
-          s.spit = null;
-        } else {
-          const env = Math.sin(st * Math.PI);
-          scale *= (1 - sp.compress * env);
-
-          const amp = sp.shakeAmp * env;
-          shakeX += Math.sin(t * 70 + s.bx * 999) * amp;
-          shakeY += Math.cos(t * 78 + s.by * 999) * amp;
-
-          const recoil = sp.recoilAmp * env;
-          shakeX += (-sp.dirX) * recoil;
-          shakeY += (-sp.dirY) * recoil;
+      if (s.type==='galaxy' && s.spit) {
+        const sp=s.spit, u=(t-sp.start)/sp.dur;
+        if (u>=1||u<0) s.spit=null;
+        else {
+          const env = Math.sin(u*Math.PI);
+          scale *= (1 - sp.compress*env);
+          const a = sp.shake*env;
+          shx += Math.sin(t*70 + s.bx*999)*a + (-sp.dx)*sp.recoil*env;
+          shy += Math.cos(t*78 + s.by*999)*a + (-sp.dy)*sp.recoil*env;
         }
       }
 
-      // main effect
       if (s.effect) {
-        const eff = s.effect;
-        const et = (t - eff.start) / eff.duration;
+        const ef=s.effect, u=(t-ef.start)/ef.dur;
 
-        if (et >= 1 || et < 0) {
-          s.effect = null;
-          s.explore = null;
-        } else if (eff.type === 'galaxySpin') {
-          const env = Math.sin(et * Math.PI);
-          spinSpeed = s.spinBase + eff.boost * env;
-          scale *= (1 + eff.pulseAmp * Math.sin(et * Math.PI * 6) * env);
-
-          const amp = eff.shakeAmp * env;
-          shakeX += Math.sin(t * 55 + (s.bx * 999)) * amp;
-          shakeY += Math.cos(t * 63 + (s.by * 999)) * amp;
-        } else if (eff.type === 'spiral') {
-          const k = easeInOutSine(et);
-          const angle = eff.baseAngle + eff.dir * (eff.turns * 2 * Math.PI * et);
-          const radius = eff.radius * k;
-          x = eff.originX + Math.cos(angle) * radius;
-          y = eff.originY + Math.sin(angle) * radius;
-        } else if (eff.type === 'explore') {
-          if (!s.explore) {
-            s.explore = {
-              x: s.currX ?? x,
-              y: s.currY ?? y,
-              tx: rand(60, W - 60),
-              ty: rand(60, H - 60),
-              nextSwitch: t + rand(0.7, 1.6),
-              jump: null,
-              nextJumpAt: t + rand(2.0, 5.0)
-            };
+        if (u>=1||u<0) {
+          // ВАЖНО: если shrinkExit закончился — закрепляем "дом" и фазы, чтобы НЕ прыгало
+          if (ef.type === 'shrinkExit') {
+            s.currX = ef.sx; s.currY = ef.sy;
+            s.bx = clamp01(ef.sx / W);
+            s.by = clamp01(ef.sy / H);
+            s.phx = -t * s.floatFx;
+            s.phy = Math.PI/2 - t * s.floatFy;
           }
+          s.effect=null; s.explore=null;
+        }
+        else if (ef.type==='galaxySpin') {
+          const env = Math.sin(u*Math.PI);
+          spin = s.spinBase + ef.boost*env;
+          scale *= (1 + ef.pulse*Math.sin(u*Math.PI*6)*env);
+          const a = ef.shake*env;
+          shx += Math.sin(t*55 + s.bx*999)*a;
+          shy += Math.cos(t*63 + s.by*999)*a;
+        }
+        else if (ef.type==='spiral') {
+          const k=ease(u), ang=ef.a + ef.dir*(ef.turns*2*Math.PI*u), r=ef.r*k;
+          x = ef.ox + Math.cos(ang)*r; y = ef.oy + Math.sin(ang)*r;
+        }
+        else if (ef.type==='explore') {
+          if (!s.explore) s.explore={x:s.currX??x,y:s.currY??y,tx:rand(60,W-60),ty:rand(60,H-60),next:t+1,jump:null,nextJump:t+3};
 
-          if (t > s.explore.nextSwitch) {
-            s.explore.tx = rand(60, W - 60);
-            s.explore.ty = rand(60, H - 60);
-            s.explore.nextSwitch = t + rand(0.7, 1.6);
-          }
+          const ex=s.explore;
+          if (t>ex.next){ ex.tx=rand(60,W-60); ex.ty=rand(60,H-60); ex.next=t+rand(0.7,1.6); }
+          if (!ex.jump && t>ex.nextJump) ex.jump={start:t,dur:1.2,portal:pickPortal(),phase:-1};
 
-          if (!s.explore.jump && t > s.explore.nextJumpAt) {
-            s.explore.jump = {
-              start: t,
-              duration: 1.2,
-              portalName: pickPortalGalaxyName(),
-              phase: -1
-            };
-          }
+          ex.x += (ex.tx-ex.x)*0.05; ex.y += (ex.ty-ex.y)*0.05;
+          x=ex.x; y=ex.y;
 
-          const follow = 0.05;
-          s.explore.x += (s.explore.tx - s.explore.x) * follow;
-          s.explore.y += (s.explore.ty - s.explore.y) * follow;
+          const baseScale = 0.85 + 0.35*(0.5+0.5*Math.sin((t-ef.start)*0.9));
+          spin = Math.abs((2*Math.PI)/1.1);
 
-          x = s.explore.x;
-          y = s.explore.y;
-
-          const tt = t - eff.start;
-          const baseExploreScale = 0.85 + 0.35 * (0.5 + 0.5 * Math.sin(tt * 0.9));
-          scale *= baseExploreScale;
-          spinSpeed = Math.abs((2 * Math.PI) / 1.1);
-
-          if (s.explore.jump) {
-            const j = s.explore.jump;
-            const jt = (t - j.start) / j.duration;
-
-            if (jt >= 1 || jt < 0) {
-              s.explore.jump = null;
-              s.explore.nextJumpAt = t + rand(2.5, 6.5);
-            } else {
-              let phase;
-              if (jt < 0.45) phase = 0;
-              else if (jt < 0.55) phase = 1;
-              else phase = 2;
-
-              if (phase !== j.phase) {
-                j.phase = phase;
-
-                if (phase === 2) {
-                  const portal = getPortalCenterByName(j.portalName);
-
-                  s.currX = portal.x;
-                  s.currY = portal.y;
-
-                  s.explore.x = portal.x;
-                  s.explore.y = portal.y;
-                  s.explore.tx = rand(60, W - 60);
-                  s.explore.ty = rand(60, H - 60);
-                  s.explore.nextSwitch = t + rand(0.7, 1.6);
-
-                  const d = normDir(s.explore.tx - portal.x, s.explore.ty - portal.y);
-                  triggerGalaxySpit(j.portalName, t, d.x, d.y);
+          if (ex.jump) {
+            const j=ex.jump, ju=(t-j.start)/j.dur;
+            if (ju>=1||ju<0){ ex.jump=null; ex.nextJump=t+rand(2.5,6.5); scale*=baseScale; }
+            else {
+              const phase = ju<0.45?0:ju<0.55?1:2;
+              if (phase!==j.phase){
+                j.phase=phase;
+                if (phase===2){
+                  const p0=portalCenter(j.portal);
+                  s.currX=p0.x; s.currY=p0.y;
+                  ex.x=p0.x; ex.y=p0.y; ex.tx=rand(60,W-60); ex.ty=rand(60,H-60); ex.next=t+rand(0.7,1.6);
+                  galaxySpit(j.portal, t, ex.tx-p0.x, ex.ty-p0.y);
                 }
               }
-
-              if (phase === 0) {
-                const p = jt / 0.45;
-                x = s.explore.x;
-                y = s.explore.y;
-                scale = baseExploreScale * (1 - p);
-              } else if (phase === 1) {
-                scale = 0;
-              } else {
-                const p = (jt - 0.55) / 0.45;
-                const portal = getPortalCenterByName(j.portalName);
-
-                x = portal.x + (s.explore.x - portal.x) * p;
-                y = portal.y + (s.explore.y - portal.y) * p;
-
-                scale = baseExploreScale * p;
+              if (phase===0){ scale = baseScale*(1 - ju/0.45); }
+              else if (phase===1){ scale = 0; }
+              else {
+                const p=(ju-0.55)/0.45, p0=portalCenter(j.portal);
+                x = p0.x + (ex.x-p0.x)*p; y = p0.y + (ex.y-p0.y)*p;
+                scale = baseScale*p;
               }
             }
-          }
-        } else if (eff.type === 'shrinkExit') {
-          let phase;
-          if (et < 0.45) phase = 0;
-          else if (et < 0.55) phase = 1;
-          else phase = 2;
+          } else scale *= baseScale;
+        }
+        else if (ef.type==='shrinkExit') {
+          // НОВОЕ: ВОСАСЫВАНИЕ В ГАЛАКТИКУ и ВОЗВРАТ ИЗ НЕЁ
+          // 0..0.55: двигаемся в портал и уменьшаемся 1->0
+          // 0.55..0.65: пауза невидимо (scale=0)
+          // 0.65..1: вылетаем из портала и возвращаемся в sx/sy, scale 0->1
+          const portal = portalCenter(ef.portal);
+          const phase = u < 0.55 ? 0 : (u < 0.65 ? 1 : 2);
 
-          if (phase !== eff.phase) {
-            eff.phase = phase;
-
+          if (phase !== ef.phase) {
+            ef.phase = phase;
             if (phase === 2) {
-              const portal = getPortalCenterByName(eff.portalName);
+              // жёстко ставим позицию в центр портала, чтобы не "появлялось из рандомного места"
               s.currX = portal.x;
               s.currY = portal.y;
-
-              const d = normDir(eff.startX - portal.x, eff.startY - portal.y);
-              triggerGalaxySpit(eff.portalName, t, d.x, d.y);
+              galaxySpit(ef.portal, t, ef.sx - portal.x, ef.sy - portal.y);
             }
           }
 
           if (phase === 0) {
-            const p = et / 0.45;
-            x = eff.startX + eff.dirX * eff.midDist * p;
-            y = eff.startY + eff.dirY * eff.midDist * p;
+            const p = ease(u / 0.55);
+            x = ef.sx + (portal.x - ef.sx) * p;
+            y = ef.sy + (portal.y - ef.sy) * p;
             scale = 1 - p;
           } else if (phase === 1) {
-            const p = (et - 0.45) / 0.10;
-            const midX = eff.startX + eff.dirX * eff.midDist;
-            const midY = eff.startY + eff.dirY * eff.midDist;
-            x = midX + (eff.exitX - midX) * p;
-            y = midY + (eff.exitY - midY) * p;
-            scale = 0;
+            x = portal.x; y = portal.y; scale = 0;
           } else {
-            const p = (et - 0.55) / 0.45;
-            const portal = getPortalCenterByName(eff.portalName);
-            x = portal.x + (eff.startX - portal.x) * p;
-            y = portal.y + (eff.startY - portal.y) * p;
+            const p = ease((u - 0.65) / 0.35);
+            x = portal.x + (ef.sx - portal.x) * p;
+            y = portal.y + (ef.sy - portal.y) * p;
             scale = p;
           }
         }
       }
 
-      const smoothPos = 0.10;
-      if (s.currX == null) {
-        s.currX = x;
-        s.currY = y;
-      } else {
-        s.currX += (x - s.currX) * smoothPos;
-        s.currY += (y - s.currY) * smoothPos;
-      }
+      // smooth pos
+      if (s.currX==null){ s.currX=x; s.currY=y; }
+      else { s.currX += (x-s.currX)*0.10; s.currY += (y-s.currY)*0.10; }
 
-      s.angle += spinSpeed * dt;
+      s.angle += spin*dt;
 
-      const tx = (s.currX + shakeX) - s.size / 2;
-      const ty = (s.currY + shakeY) - s.size / 2;
-      s.wrap.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      s.wrap.style.transform = `translate3d(${(s.currX+shx)-s.size/2}px,${(s.currY+shy)-s.size/2}px,0)`;
       s.img.style.transform = `rotate(${s.angle}rad) scale(${scale})`;
       s.wrap.style.opacity = String(s.baseOpacity);
     }
 
     requestAnimationFrame(tick);
+  })(performance.now());
   }
-
-  requestAnimationFrame(tick);
-}
-
