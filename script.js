@@ -26,7 +26,7 @@ function initSpaceBackground() {
   const hero = document.querySelector('.hero');
   if (!hero) return;
 
-  // ====== настройки ======
+  // ====== НАСТРОЙКИ ======
   const IMG_DIR = './';
   const EXT = '.png';
 
@@ -39,14 +39,14 @@ function initSpaceBackground() {
   const FPS = 24;
   const FRAME_INTERVAL = 1000 / FPS;
 
-  // Planet effects (per-object independent cycle)
+  // Planet effects per-object independent cycle
   const PLANET_EFFECT_ORDER = ['spiral', 'explore', 'shrinkExit'];
 
   // remove old scene
   const oldScene = hero.querySelector('#spaceScene');
   if (oldScene) oldScene.remove();
 
-  // scene
+  // ====== DOM ======
   const scene = document.createElement('div');
   scene.id = 'spaceScene';
   hero.appendChild(scene);
@@ -63,7 +63,6 @@ function initSpaceBackground() {
   });
   scene.appendChild(bgLayer);
 
-  // stars layer (CSS twinkle)
   const starLayer = document.createElement('div');
   Object.assign(starLayer.style, {
     position: 'absolute',
@@ -74,7 +73,6 @@ function initSpaceBackground() {
   });
   scene.appendChild(starLayer);
 
-  // objects layer
   const objLayer = document.createElement('div');
   objLayer.id = 'spaceObjLayer';
   Object.assign(objLayer.style, {
@@ -85,7 +83,7 @@ function initSpaceBackground() {
   });
   scene.appendChild(objLayer);
 
-  // sizes
+  // ====== sizes ======
   let W = 1, H = 1;
   function resize() {
     const rect = hero.getBoundingClientRect();
@@ -95,7 +93,7 @@ function initSpaceBackground() {
   resize();
   window.addEventListener('resize', resize);
 
-  // pointer
+  // ====== pointer ======
   let mouseX = W / 2, mouseY = H / 2;
 
   function setPointer(e) {
@@ -108,12 +106,17 @@ function initSpaceBackground() {
   hero.addEventListener('pointermove', setPointer, { passive: true });
   hero.addEventListener('touchmove', setPointer, { passive: true });
 
-  // utils
+  // ====== utils ======
   const rand = (a, b) => a + Math.random() * (b - a);
   const clamp01 = (v) => Math.max(0, Math.min(1, v));
   const easeInOutSine = (t) => 0.5 - 0.5 * Math.cos(Math.PI * t);
 
-  // stars: CSS-only twinkle
+  function normDir(dx, dy) {
+    const d = Math.hypot(dx, dy) || 1;
+    return { x: dx / d, y: dy / d };
+  }
+
+  // ====== stars (CSS twinkle) ======
   (function initStars() {
     const style = document.createElement('style');
     style.textContent = `
@@ -152,8 +155,7 @@ function initSpaceBackground() {
     }
   })();
 
-  // ASSETS:
-  // idleSpinMs — время полного оборота в спокойном состоянии (чем больше — тем медленнее)
+  // ====== ASSETS ======
   const ASSETS = [
     // nebula
     { name: 'nebula1', type: 'nebula', size: 980, opacity: 0.28, x: 0.50, y: 0.45 },
@@ -178,6 +180,7 @@ function initSpaceBackground() {
     { name: 'pluton',  type: 'planet', size: 160, opacity: 0.90, x: 0.92, y: 0.14, idleSpinMs: 210000 }
   ];
 
+  // ====== sprites ======
   function createSprite(asset) {
     const layer = asset.type === 'nebula' ? bgLayer : objLayer;
 
@@ -194,6 +197,8 @@ function initSpaceBackground() {
     img.loading = 'eager';
     img.draggable = false;
     img.src = `${IMG_DIR}${asset.name}${EXT}`;
+    img.style.animation = 'none';
+    img.style.filter = 'none';
 
     wrap.appendChild(img);
     layer.appendChild(wrap);
@@ -214,7 +219,6 @@ function initSpaceBackground() {
       baseOpacity: asset.opacity,
       ready: false,
 
-      // slow drifting
       floatAx: rand(3, 9),
       floatAy: rand(3, 9),
       floatFx: rand(0.04, 0.10),
@@ -231,10 +235,11 @@ function initSpaceBackground() {
       effect: null,
       explore: null,
 
-      // per-object sequence index (planets)
+      // galaxy extra "spit" reaction (overlay)
+      spit: null,
+
       effectIndex: 0,
 
-      // nebula twinkle
       twPhase: asset.type === 'nebula' ? rand(0, Math.PI * 2) : 0
     };
 
@@ -255,35 +260,54 @@ function initSpaceBackground() {
 
   const sprites = ASSETS.map(createSprite);
 
-  // --------- НОВОЕ: центр "портала" = центр ближайшей galaxy1-4 ----------
-  function getNearestGalaxyCenter(x, y) {
-    let best = null;
-    let bestD = Infinity;
-
-    for (const s of sprites) {
-      if (!s.ready) continue;
-      if (s.type !== 'galaxy') continue;
-
-      const gx = s.currX ?? (s.bx * W);
-      const gy = s.currY ?? (s.by * H);
-      const d = Math.hypot(x - gx, y - gy);
-
-      if (d < bestD) {
-        bestD = d;
-        best = { x: gx, y: gy };
-      }
-    }
-
-    // если галактики ещё не загрузились — на всякий случай центр экрана
-    return best || { x: W / 2, y: H / 2 };
+  // ====== helpers: galaxy portal ======
+  function getGalaxyByName(name) {
+    return sprites.find(s => s.type === 'galaxy' && s.name === name && s.ready);
   }
 
+  function pickPortalGalaxyName() {
+    const names = ['galaxy1', 'galaxy2', 'galaxy3', 'galaxy4'];
+    const ready = names.filter(n => !!getGalaxyByName(n));
+    if (ready.length === 0) return null;
+    return ready[Math.floor(Math.random() * ready.length)];
+  }
+
+  function getPortalCenterByName(name) {
+    const g = getGalaxyByName(name);
+    if (!g) return { x: W / 2, y: H / 2 };
+    return { x: g.currX ?? (g.bx * W), y: g.currY ?? (g.by * H) };
+  }
+
+  // ====== NEW: trigger galaxy "spit" (compress+shake+recoil) ======
+  function triggerGalaxySpit(portalName, t, dirX, dirY) {
+    if (!portalName) return;
+    const g = getGalaxyByName(portalName);
+    if (!g) return;
+
+    const d = normDir(dirX, dirY); // direction of emitted object
+    g.spit = {
+      start: t,
+      duration: 0.65,
+      // compress to 0.75 at peak => 25%
+      compress: 0.25,
+      // shake amplitude in px
+      shakeAmp: 7,
+      // recoil opposite to emission
+      recoilAmp: 10,
+      dirX: d.x,
+      dirY: d.y
+    };
+  }
+
+  // ====== effects start ======
   function startGalaxySpin(sprite, t) {
     sprite.effect = {
       type: 'galaxySpin',
       start: t,
       duration: 5,
-      boost: -12.0 // CCW
+      boost: -12.0,   // fast CCW
+      shakeAmp: 6,
+      pulseAmp: 0.25
     };
   }
 
@@ -301,7 +325,7 @@ function initSpaceBackground() {
         baseAngle: Math.random() * Math.PI * 2,
         dir: Math.random() < 0.5 ? 1 : -1,
         turns: 4,
-        radius: 75 // ~4см диаметр ≈ 150px
+        radius: 75
       };
       return;
     }
@@ -312,8 +336,12 @@ function initSpaceBackground() {
         y: sprite.currY ?? (sprite.by * H),
         tx: rand(60, W - 60),
         ty: rand(60, H - 60),
-        nextSwitch: t + rand(0.7, 1.6)
+        nextSwitch: t + rand(0.7, 1.6),
+
+        jump: null,
+        nextJumpAt: t + rand(2.0, 5.0)
       };
+
       sprite.effect = { type: 'explore', start: t, duration: 30 };
       return;
     }
@@ -322,14 +350,12 @@ function initSpaceBackground() {
       const startX = sprite.currX ?? (sprite.bx * W);
       const startY = sprite.currY ?? (sprite.by * H);
 
-      // ПОРТАЛ: центр ближайшей галактики
-      const portal = getNearestGalaxyCenter(startX, startY);
+      const portalName = pickPortalGalaxyName();
 
       const ang = Math.random() * Math.PI * 2;
       const dirX = Math.cos(ang);
       const dirY = Math.sin(ang);
 
-      // точка выхода "за экран" (движение происходит при scale=0, т.е. не видно)
       const sides = ['top', 'right', 'bottom', 'left'];
       const exitSide = sides[Math.floor(Math.random() * sides.length)];
 
@@ -353,15 +379,13 @@ function initSpaceBackground() {
         midDist: Math.min(W, H) * 0.35,
         exitX: exitP.x,
         exitY: exitP.y,
-
-        // главное изменение:
-        portalX: portal.x,
-        portalY: portal.y
+        portalName,
+        phase: -1
       };
     }
   }
 
-  // stable click: choose nearest sprite
+  // ====== click: stable choose nearest ======
   hero.addEventListener(
     'pointerdown',
     (e) => {
@@ -397,7 +421,7 @@ function initSpaceBackground() {
     { capture: true }
   );
 
-  // background parallax (light)
+  // ====== background parallax ======
   let bgTx = 0, bgTy = 0;
   function updateBgParallax(t) {
     const nx = (mouseX / Math.max(1, W)) - 0.5;
@@ -413,7 +437,7 @@ function initSpaceBackground() {
     bgLayer.style.transform = `translate3d(${bgTx}px, ${bgTy}px, 0) scale(1.08)`;
   }
 
-  // main loop
+  // ====== main loop ======
   let lastFrame = 0;
 
   function tick(now) {
@@ -446,6 +470,7 @@ function initSpaceBackground() {
       s.wrap.style.transform = `translate3d(${(x - s.size / 2)}px, ${(y - s.size / 2)}px, 0)`;
     }
 
+    // objects
     for (const s of sprites) {
       if (!s.ready) continue;
       if (s.type === 'nebula') continue;
@@ -456,7 +481,36 @@ function initSpaceBackground() {
 
       let scale = 1;
       let spinSpeed = s.spinBase;
+      let shakeX = 0, shakeY = 0;
 
+      // ---------- galaxy spit overlay (compress+shake+recoil) ----------
+      if (s.type === 'galaxy' && s.spit) {
+        const sp = s.spit;
+        const st = (t - sp.start) / sp.duration;
+
+        if (st >= 1 || st < 0) {
+          s.spit = null;
+        } else {
+          // envelope 0..1..0
+          const env = Math.sin(st * Math.PI);
+
+          // compress scale
+          const compressMul = 1 - sp.compress * env;
+          scale *= compressMul;
+
+          // shake
+          const amp = sp.shakeAmp * env;
+          shakeX += Math.sin(t * 70 + s.bx * 999) * amp;
+          shakeY += Math.cos(t * 78 + s.by * 999) * amp;
+
+          // recoil opposite to emission direction
+          const recoil = sp.recoilAmp * env;
+          shakeX += (-sp.dirX) * recoil;
+          shakeY += (-sp.dirY) * recoil;
+        }
+      }
+
+      // main effect
       if (s.effect) {
         const eff = s.effect;
         const et = (t - eff.start) / eff.duration;
@@ -465,7 +519,13 @@ function initSpaceBackground() {
           s.effect = null;
           s.explore = null;
         } else if (eff.type === 'galaxySpin') {
-          spinSpeed = s.spinBase + eff.boost * Math.sin(et * Math.PI);
+          const env = Math.sin(et * Math.PI);
+          spinSpeed = s.spinBase + eff.boost * env;
+          scale *= (1 + eff.pulseAmp * Math.sin(et * Math.PI * 6) * env);
+
+          const amp = eff.shakeAmp * env;
+          shakeX += Math.sin(t * 55 + (s.bx * 999)) * amp;
+          shakeY += Math.cos(t * 63 + (s.by * 999)) * amp;
         } else if (eff.type === 'spiral') {
           const k = easeInOutSine(et);
           const angle = eff.baseAngle + eff.dir * (eff.turns * 2 * Math.PI * et);
@@ -479,76 +539,119 @@ function initSpaceBackground() {
               y: s.currY ?? y,
               tx: rand(60, W - 60),
               ty: rand(60, H - 60),
-              nextSwitch: t + rand(0.7, 1.6)
+              nextSwitch: t + rand(0.7, 1.6),
+              jump: null,
+              nextJumpAt: t + rand(2.0, 5.0)
             };
           }
 
+          // смена целей
           if (t > s.explore.nextSwitch) {
             s.explore.tx = rand(60, W - 60);
             s.explore.ty = rand(60, H - 60);
             s.explore.nextSwitch = t + rand(0.7, 1.6);
           }
 
+          // старт портального прыжка
+          if (!s.explore.jump && t > s.explore.nextJumpAt) {
+            s.explore.jump = {
+              start: t,
+              duration: 1.2,
+              portalName: pickPortalGalaxyName(),
+              phase: -1
+            };
+          }
+
+          // базовое движение к цели
           const follow = 0.05;
           s.explore.x += (s.explore.tx - s.explore.x) * follow;
           s.explore.y += (s.explore.ty - s.explore.y) * follow;
 
+          // базовая поза explore
           x = s.explore.x;
           y = s.explore.y;
 
+          // базовый scale и быстрый CW спин
           const tt = t - eff.start;
-          scale = 0.85 + 0.35 * (0.5 + 0.5 * Math.sin(tt * 0.9));
-          spinSpeed = Math.abs((2 * Math.PI) / 1.1); // fast CW
-        } else if (eff.type === 'shrinkExit') {
-          // 0..0.45: уходим и уменьшаемся до 0
-          // 0.45..0.55: улетаем за экран (невидимо)
-          // 0.55..1: появляемся из центра галактики (scale 0->1) и возвращаемся на место
-          if (et < 0.45) {
-            const p = et / 0.45;
-            x = eff.startX + eff.dirX * eff.midDist * p;
-            y = eff.startY + eff.dirY * eff.midDist * p;
-            scale = 1 - p;
-          } else if (et < 0.55) {
-            const p = (et - 0.45) / 0.10;
-            const midX = eff.startX + eff.dirX * eff.midDist;
-            const midY = eff.startY + eff.dirY * eff.midDist;
-            x = midX + (eff.exitX - midX) * p;
-            y = midY + (eff.exitY - midY) * p;
-            scale = 0;
-          } else {
-            const p = (et - 0.55) / 0.45;
-            // КЛЮЧ: стартуем из центра галактики
-            x = eff.portalX + (eff.startX - eff.portalX) * p;
-            y = eff.portalY + (eff.startY - eff.portalY) * p;
-            // масштаб из 0 -> 1
-            scale = p;
+          const baseExploreScale = 0.85 + 0.35 * (0.5 + 0.5 * Math.sin(tt * 0.9));
+          scale *= baseExploreScale;
+          spinSpeed = Math.abs((2 * Math.PI) / 1.1);
+
+          // если идёт прыжок
+          if (s.explore.jump) {
+            const j = s.explore.jump;
+            const jt = (t - j.start) / j.duration;
+
+            if (jt >= 1 || jt < 0) {
+              s.explore.jump = null;
+              s.explore.nextJumpAt = t + rand(2.5, 6.5);
+            } else {
+              let phase;
+              if (jt < 0.45) phase = 0;
+              else if (jt < 0.55) phase = 1;
+              else phase = 2;
+
+              if (phase !== j.phase) {
+                j.phase = phase;
+
+                if (phase === 2) {
+                  const portal = getPortalCenterByName(j.portalName);
+
+                  // телепорт в портал
+                  s.currX = portal.x;
+                  s.currY = portal.y;
+
+                  // новая цель после портала
+                  s.explore.x = portal.x;
+                  s.explore.y = portal.y;
+                  s.explore.tx = rand(60, W - 60);
+                  s.explore.ty = rand(60, H - 60);
+                  s.explore.nextSwitch = t + rand(0.7, 1.6);
+
+                  // ---- НОВОЕ: "галактика выплёвывает объект" ----
+                  const d = normDir(s.explore.tx - portal.x, s.explore.ty - portal.y);
+                  triggerGalaxySpit(j.portalName, t, d.x, d.y);
+                }
+              }
+
+              if (phase === 0) {
+                const p = jt / 0.45;
+                x = s.explore.x;
+                y = s.explore.y;
+                scale = baseExploreScale * (1 - p);
+              } else if (phase === 1) {
+                scale = 0;
+              } else {
+                const p = (jt - 0.55) / 0.45;
+                const portal = getPortalCenterByName(j.portalName);
+
+                x = portal.x + (s.explore.x - portal.x) * p;
+                y = portal.y + (s.explore.y - portal.y) * p;
+
+                scale = baseExploreScale * p;
+              }
+            }
           }
-        }
-      }
+        } else if (eff.type === 'shrinkExit') {
+          let phase;
+          if (et < 0.45) phase = 0;
+          else if (et < 0.55) phase = 1;
+          else phase = 2;
 
-      // smooth position
-      const smoothPos = 0.10;
-      if (s.currX == null) {
-        s.currX = x;
-        s.currY = y;
-      } else {
-        s.currX += (x - s.currX) * smoothPos;
-        s.currY += (y - s.currY) * smoothPos;
-      }
+          if (phase !== eff.phase) {
+            eff.phase = phase;
 
-      s.angle += spinSpeed * dt;
+            if (phase === 2) {
+              const portal = getPortalCenterByName(eff.portalName);
+              s.currX = portal.x;
+              s.currY = portal.y;
 
-      const tx = s.currX - s.size / 2;
-      const ty = s.currY - s.size / 2;
+              // ---- НОВОЕ: "галактика выплёвывает объект" ----
+              const d = normDir(eff.startX - portal.x, eff.startY - portal.y);
+              triggerGalaxySpit(eff.portalName, t, d.x, d.y);
+            }
+          }
 
-      s.wrap.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
-      s.img.style.transform = `rotate(${s.angle}rad) scale(${scale})`;
-
-      s.wrap.style.opacity = String(s.baseOpacity);
-    }
-
-    requestAnimationFrame(tick);
-  }
-
-  requestAnimationFrame(tick);
-    }
+          if (phase === 0) {
+            const p = et / 0.45;
+            x = eff.startX + eff.dirX * 
