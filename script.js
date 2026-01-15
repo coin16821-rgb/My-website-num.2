@@ -154,7 +154,6 @@ function initSpaceBackground() {
 
   // ASSETS:
   // idleSpinMs — время полного оборота в спокойном состоянии (чем больше — тем медленнее)
-  // сделано специально медленно
   const ASSETS = [
     // nebula
     { name: 'nebula1', type: 'nebula', size: 980, opacity: 0.28, x: 0.50, y: 0.45 },
@@ -242,7 +241,6 @@ function initSpaceBackground() {
     img.addEventListener('load', () => {
       sprite.ready = true;
       hero.classList.add('space-ready');
-      // initial place
       sprite.currX = sprite.bx * W;
       sprite.currY = sprite.by * H;
     });
@@ -256,6 +254,29 @@ function initSpaceBackground() {
   }
 
   const sprites = ASSETS.map(createSprite);
+
+  // --------- НОВОЕ: центр "портала" = центр ближайшей galaxy1-4 ----------
+  function getNearestGalaxyCenter(x, y) {
+    let best = null;
+    let bestD = Infinity;
+
+    for (const s of sprites) {
+      if (!s.ready) continue;
+      if (s.type !== 'galaxy') continue;
+
+      const gx = s.currX ?? (s.bx * W);
+      const gy = s.currY ?? (s.by * H);
+      const d = Math.hypot(x - gx, y - gy);
+
+      if (d < bestD) {
+        bestD = d;
+        best = { x: gx, y: gy };
+      }
+    }
+
+    // если галактики ещё не загрузились — на всякий случай центр экрана
+    return best || { x: W / 2, y: H / 2 };
+  }
 
   function startGalaxySpin(sprite, t) {
     sprite.effect = {
@@ -301,13 +322,16 @@ function initSpaceBackground() {
       const startX = sprite.currX ?? (sprite.bx * W);
       const startY = sprite.currY ?? (sprite.by * H);
 
+      // ПОРТАЛ: центр ближайшей галактики
+      const portal = getNearestGalaxyCenter(startX, startY);
+
       const ang = Math.random() * Math.PI * 2;
       const dirX = Math.cos(ang);
       const dirY = Math.sin(ang);
 
+      // точка выхода "за экран" (движение происходит при scale=0, т.е. не видно)
       const sides = ['top', 'right', 'bottom', 'left'];
       const exitSide = sides[Math.floor(Math.random() * sides.length)];
-      const enterSide = sides[Math.floor(Math.random() * sides.length)];
 
       function offscreen(side) {
         if (side === 'top') return { x: rand(60, W - 60), y: -sprite.size * 2 };
@@ -317,7 +341,6 @@ function initSpaceBackground() {
       }
 
       const exitP = offscreen(exitSide);
-      const enterP = offscreen(enterSide);
 
       sprite.effect = {
         type: 'shrinkExit',
@@ -330,8 +353,10 @@ function initSpaceBackground() {
         midDist: Math.min(W, H) * 0.35,
         exitX: exitP.x,
         exitY: exitP.y,
-        enterX: enterP.x,
-        enterY: enterP.y
+
+        // главное изменение:
+        portalX: portal.x,
+        portalY: portal.y
       };
     }
   }
@@ -340,7 +365,6 @@ function initSpaceBackground() {
   hero.addEventListener(
     'pointerdown',
     (e) => {
-      // don't break UI elements
       if (e.target.closest('button, a, input, textarea, form, label')) return;
 
       setPointer(e);
@@ -356,7 +380,6 @@ function initSpaceBackground() {
         const cy = s.currY ?? (s.by * H);
         const d = Math.hypot(mouseX - cx, mouseY - cy);
 
-        // big hit radius for reliable clicks
         const hitR = Math.max(70, s.size * 0.9);
         if (d <= hitR && d < bestD) {
           best = s;
@@ -368,7 +391,6 @@ function initSpaceBackground() {
 
       const t = performance.now() / 1000;
 
-      // independent effects per object
       if (best.type === 'galaxy') startGalaxySpin(best, t);
       if (best.type === 'planet') startPlanetNext(best, t);
     },
@@ -409,22 +431,19 @@ function initSpaceBackground() {
     lastFrame = now;
 
     const t = now / 1000;
-
     updateBgParallax(t);
 
-    // nebula twinkle
+    // nebula twinkle + placement
     for (const s of sprites) {
       if (!s.ready || s.type !== 'nebula') continue;
+
       const osc = (Math.sin(t * NEBULA_TWINKLE_SPEED + s.twPhase) + 1) * 0.5;
       const op = NEBULA_MIN_OPACITY + (NEBULA_MAX_OPACITY - NEBULA_MIN_OPACITY) * osc;
       s.wrap.style.opacity = op.toFixed(3);
 
-      // keep position stable (optional)
       const x = s.bx * W;
       const y = s.by * H;
-      const tx = x - s.size / 2;
-      const ty = y - s.size / 2;
-      s.wrap.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      s.wrap.style.transform = `translate3d(${(x - s.size / 2)}px, ${(y - s.size / 2)}px, 0)`;
     }
 
     for (const s of sprites) {
@@ -481,6 +500,9 @@ function initSpaceBackground() {
           scale = 0.85 + 0.35 * (0.5 + 0.5 * Math.sin(tt * 0.9));
           spinSpeed = Math.abs((2 * Math.PI) / 1.1); // fast CW
         } else if (eff.type === 'shrinkExit') {
+          // 0..0.45: уходим и уменьшаемся до 0
+          // 0.45..0.55: улетаем за экран (невидимо)
+          // 0.55..1: появляемся из центра галактики (scale 0->1) и возвращаемся на место
           if (et < 0.45) {
             const p = et / 0.45;
             x = eff.startX + eff.dirX * eff.midDist * p;
@@ -495,8 +517,10 @@ function initSpaceBackground() {
             scale = 0;
           } else {
             const p = (et - 0.55) / 0.45;
-            x = eff.enterX + (eff.startX - eff.enterX) * p;
-            y = eff.enterY + (eff.startY - eff.enterY) * p;
+            // КЛЮЧ: стартуем из центра галактики
+            x = eff.portalX + (eff.startX - eff.portalX) * p;
+            y = eff.portalY + (eff.startY - eff.portalY) * p;
+            // масштаб из 0 -> 1
             scale = p;
           }
         }
@@ -512,18 +536,14 @@ function initSpaceBackground() {
         s.currY += (y - s.currY) * smoothPos;
       }
 
-      // slow spin always, fast only in effect
       s.angle += spinSpeed * dt;
 
       const tx = s.currX - s.size / 2;
       const ty = s.currY - s.size / 2;
 
-      // wrapper only translate
       s.wrap.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
-      // img rotate+scale
       s.img.style.transform = `rotate(${s.angle}rad) scale(${scale})`;
 
-      // keep base opacity (effects could change it in future)
       s.wrap.style.opacity = String(s.baseOpacity);
     }
 
@@ -531,4 +551,4 @@ function initSpaceBackground() {
   }
 
   requestAnimationFrame(tick);
-}
+    }
