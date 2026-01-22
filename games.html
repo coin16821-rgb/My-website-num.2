@@ -10,7 +10,7 @@
   <header class="topbar">
     <a class="topbar__link" href="index.html">← Назад</a>
     <div class="topbar__title">Action Games</div>
-    <button id="btnSettings" class="topbar__btn">Настройки</button>
+    <button id="btnSettings" class="topbar__btn" type="button">Настройки</button>
   </header>
 
   <main id="root" class="root">
@@ -20,7 +20,7 @@
     <div id="hud" class="hud" hidden>
       <div id="hudLeft" class="hud__left"></div>
       <div class="hud__right">
-        <button id="btnPause" class="ui-btn">Пауза</button>
+        <button id="btnPause" class="ui-btn" type="button">Пауза</button>
       </div>
     </div>
 
@@ -28,35 +28,40 @@
     <div id="menu" class="panel">
       <h1 class="panel__title">Выбери игру</h1>
       <div class="grid">
-        <button class="card" data-game="runner">
+        <button class="card" data-game="runner" type="button">
           <div class="card__title">Astro Runner</div>
           <div class="card__desc">Уклоняйся, собирай топливо, пройди 3 сектора</div>
         </button>
-        <button class="card" data-game="shooter">
+
+        <button class="card" data-game="shooter" type="button">
           <div class="card__title">Neon Shooter</div>
-          <div class="card__desc">Волны врагов, апгрейды, 3 уровня</div>
+          <div class="card__desc">Волны врагов, 3 уровня</div>
         </button>
-        <button class="card" data-game="arena">
+
+        <button class="card" data-game="arena" type="button">
           <div class="card__title">Blade Arena</div>
-          <div class="card__desc">Арена, рывок B, комбо, 3 волны</div>
+          <div class="card__desc">Арена, рывок B, 3 волны</div>
         </button>
-        <button class="card" data-game="breakout">
+
+        <button class="card" data-game="breakout" type="button">
           <div class="card__title">Breakout X</div>
-          <div class="card__desc">Арканоид, бонусы, 3 раскладки</div>
+          <div class="card__desc">Арканоид, 3 раскладки</div>
         </button>
-        <button class="card" data-game="escort">
+
+        <button class="card" data-game="escort" type="button">
           <div class="card__title">Escort Protocol</div>
-          <div class="card__desc">Защити груз до точки эвакуации (3 этапа)</div>
+          <div class="card__desc">Защити груз до эвакуации (3 этапа)</div>
         </button>
-        <button class="card" data-game="stealth">
-          <div class="card__title">Hack & Hide</div>
+
+        <button class="card" data-game="stealth" type="button">
+          <div class="card__title">Hack &amp; Hide</div>
           <div class="card__desc">Стелс + взлом терминалов (3 уровня)</div>
         </button>
       </div>
 
       <div class="panel__footer">
         <div class="hint">
-          ПК: WASD/Стрелки — движение, Space(A), Shift(B), P/Esc — пауза.
+          ПК: WASD/Стрелки — движение, Space(A), Shift(B)/E(B), P/Esc — пауза.
           Телефон: кнопки на экране.
         </div>
       </div>
@@ -66,15 +71,15 @@
     <div id="pause" class="panel" hidden>
       <h2 class="panel__title">Пауза</h2>
       <div class="row">
-        <button id="btnResume" class="ui-btn ui-btn--primary">Продолжить</button>
-        <button id="btnRestart" class="ui-btn">Рестарт</button>
-        <button id="btnToMenu" class="ui-btn">В меню</button>
+        <button id="btnResume" class="ui-btn ui-btn--primary" type="button">Продолжить</button>
+        <button id="btnRestart" class="ui-btn" type="button">Рестарт</button>
+        <button id="btnToMenu" class="ui-btn" type="button">В меню</button>
       </div>
     </div>
 
     <!-- Settings modal -->
     <div id="settings" class="modal" hidden>
-      <div class="modal__card">
+      <div class="modal__card" role="dialog" aria-modal="true" aria-label="Настройки">
         <h2>Настройки</h2>
 
         <label class="field">
@@ -102,7 +107,7 @@
         </label>
 
         <div class="row">
-          <button id="btnCloseSettings" class="ui-btn ui-btn--primary">Ок</button>
+          <button id="btnCloseSettings" class="ui-btn ui-btn--primary" type="button">Ок</button>
         </div>
       </div>
     </div>
@@ -110,22 +115,23 @@
     <!-- Touch controls (mobile) -->
     <div id="touchUI" class="touch-ui" hidden>
       <div class="touch-pad">
-        <button class="tbtn" data-act="left">◀</button>
-        <button class="tbtn" data-act="right">▶</button>
-        <button class="tbtn" data-act="up">▲</button>
-        <button class="tbtn" data-act="down">▼</button>
+        <button class="tbtn" data-act="left" type="button">◀</button>
+        <button class="tbtn" data-act="right" type="button">▶</button>
+        <button class="tbtn" data-act="up" type="button">▲</button>
+        <button class="tbtn" data-act="down" type="button">▼</button>
       </div>
 
       <div class="touch-actions">
-        <button class="tbtn big" data-act="a">A</button>
-        <button class="tbtn big" data-act="b">B</button>
-        <button class="tbtn" data-act="pause">⏸</button>
+        <button class="tbtn big" data-act="a" type="button">A</button>
+        <button class="tbtn big" data-act="b" type="button">B</button>
+        <button class="tbtn" data-act="pause" type="button">⏸</button>
       </div>
     </div>
 
     <div id="fps" class="fps" hidden></div>
   </main>
 
-  <script src="games.js"></script>
+  <script src="./games.js" defer></script>
 </body>
 </html>
+
